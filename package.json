@@ -1,0 +1,20 @@
+{
+  "name": "broker-portal-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Clickable workshop prototype of the Broker Portal Salesforce product (fictional data).",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "verify": "npm run build && npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0",
+    "@salesforce-ux/design-system": "2.264.3"
+  }
+}

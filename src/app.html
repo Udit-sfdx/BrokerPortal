@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Broker Portal workshop prototype by ThinkVibes. All data is fictional.">
+<title>Broker Portal – Workshop Prototype</title>
+<style>/*__SLDS__*/</style>
+<style>
+  body{background:#f3f3f3;margin:0;min-height:100vh}
+  .bp-header{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:1rem;height:52px;padding:0 1rem;background:#fff;border-bottom:1px solid #dddbda}
+  .bp-logo{display:flex;align-items:center;gap:.6rem;white-space:nowrap}
+  .bp-logo-mark{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#0176d3,#032d60);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;letter-spacing:.5px}
+  .bp-logo-text b{display:block;color:#032d60;font-size:14px;line-height:1.1}
+  .bp-logo-text span{font-size:11px;color:#706e6b}
+  .bp-header-right{margin-left:auto;display:flex;align-items:center;gap:.6rem}
+  .bp-clock{display:flex;align-items:center;gap:.35rem;background:#f3f3f3;border:1px solid #dddbda;border-radius:.25rem;padding:.15rem .4rem;font-size:12px}
+  .bp-clock .bp-time{font-weight:700;font-variant-numeric:tabular-nums;min-width:44px;text-align:center}
+  .bp-clock select{border:none;background:transparent;font-size:12px}
+  .bp-bell{position:relative}
+  .bp-bell-count{position:absolute;top:-4px;right:-4px;background:#ba0517;color:#fff;border-radius:9px;font-size:10px;line-height:16px;min-width:16px;text-align:center;padding:0 3px}
+  .bp-notif-pop{position:absolute;right:0;top:36px;width:360px;max-height:420px;overflow:auto;z-index:60}
+  .bp-main{padding:.75rem;max-width:1500px;margin:0 auto}
+  .bp-grid{display:grid;gap:.75rem}
+  .bp-cols-2{grid-template-columns:2fr 1fr}
+  .bp-cols-3{grid-template-columns:repeat(3,1fr)}
+  .bp-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.75rem}
+  .bp-tile{background:#fff;border:1px solid #dddbda;border-radius:.25rem;padding:.75rem 1rem}
+  .bp-tile .bp-tile-label{font-size:12px;color:#706e6b}
+  .bp-tile .bp-tile-value{font-size:24px;font-weight:300;color:#181818;margin-top:.15rem}
+  .bp-tile .bp-tile-sub{font-size:11px;color:#706e6b}
+  .bp-tile.bp-warn{border-left:4px solid #dd7a01}
+  .bp-tile.bp-bad{border-left:4px solid #ba0517}
+  .bp-tile.bp-good{border-left:4px solid #2e844a}
+  .bp-kanban{display:flex;gap:.5rem;overflow-x:auto;padding-bottom:.5rem;align-items:flex-start}
+  .bp-col{min-width:215px;flex:0 0 215px;background:#fafaf9;border:1px solid #e5e5e5;border-radius:.25rem;min-height:300px}
+  .bp-col-head{padding:.5rem .6rem;border-bottom:1px solid #e5e5e5;font-weight:700;font-size:12px;display:flex;justify-content:space-between;gap:.25rem}
+  .bp-col-head small{font-weight:400;color:#706e6b}
+  .bp-col.bp-drop{outline:2px dashed #0176d3;background:#eef4ff}
+  .bp-card{background:#fff;border:1px solid #dddbda;border-radius:.25rem;margin:.5rem;padding:.5rem .6rem;cursor:grab;box-shadow:0 2px 2px rgba(0,0,0,.05);font-size:12px}
+  .bp-card:hover{border-color:#0176d3}
+  .bp-card.bp-stuck{border-left:3px solid #ba0517}
+  .bp-card b{display:block;color:#0b5cab;margin-bottom:.15rem}
+  .bp-bar-row{display:grid;grid-template-columns:150px 1fr 90px;gap:.5rem;align-items:center;margin:.3rem 0;font-size:12px}
+  .bp-bar-track{background:#ecebea;border-radius:2px;height:12px;position:relative}
+  .bp-bar{height:12px;border-radius:2px;background:#0176d3}
+  .bp-bar.bp-alt{background:#06a59a}
+  .bp-bar.bp-alt2{background:#9050e9}
+  .bp-threshold{position:absolute;top:-4px;bottom:-4px;width:2px;background:#ba0517}
+  .bp-sla{font-size:11px;font-weight:700;border-radius:.25rem;padding:.05rem .4rem;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .bp-sla.ok{background:#e1f5e6;color:#2e844a}.bp-sla.soon{background:#fef1e6;color:#a96404}.bp-sla.bad{background:#fde8e8;color:#ba0517}.bp-sla.done{background:#f3f3f3;color:#706e6b;font-weight:400}
+  .bp-trace td,.bp-trace th{font-size:12px;vertical-align:top}
+  .bp-pass{color:#2e844a;font-weight:700}.bp-fail{color:#ba0517;font-weight:700}
+  .bp-guide{position:fixed;right:0;top:92px;bottom:0;width:340px;z-index:40;background:#fff;border-left:1px solid #dddbda;overflow:auto}
+  .bp-guide .slds-card{margin:0;border:none;box-shadow:none}
+  .bp-has-guide .bp-main{margin-right:340px}
+  .bp-guide-min{position:fixed;right:1rem;bottom:1rem;z-index:40}
+  .bp-step{display:flex;gap:.5rem;padding:.45rem .25rem;border-bottom:1px solid #f3f3f3;align-items:flex-start}
+  .bp-step-n{flex:0 0 22px;height:22px;border-radius:11px;background:#ecebea;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .bp-step.bp-on .bp-step-n{background:#0176d3;color:#fff}
+  .bp-step-body{flex:1;font-size:12px}
+  .bp-step-body b{display:block;font-size:13px}
+  .bp-muted{color:#706e6b}
+  .bp-small{font-size:12px}
+  .bp-tl{list-style:none;margin:0;padding:0}
+  .bp-tl li{display:flex;gap:.6rem;padding:.45rem 0;border-bottom:1px solid #f3f3f3;font-size:12px}
+  .bp-tl-ico{flex:0 0 26px;height:26px;border-radius:13px;display:flex;align-items:center;justify-content:center}
+  .bp-tl-ico svg{width:14px;height:14px;fill:#fff}
+  .ico-call{background:#48c3cc}.ico-chat{background:#2e844a}.ico-email{background:#939393}.ico-assign{background:#0176d3}.ico-escalate{background:#dd7a01}.ico-merge{background:#9050e9}.ico-status{background:#3ba755}.ico-system{background:#747474}.ico-block{background:#ba0517}.ico-doc{background:#5867e8}.ico-money{background:#06a59a}
+  .bp-setup{display:grid;grid-template-columns:240px 1fr;gap:.75rem;align-items:start}
+  .bp-kv{display:grid;grid-template-columns:140px 1fr;gap:.35rem .75rem;font-size:12px}
+  .bp-kv dt{color:#706e6b}
+  .bp-kv dd{margin:0;word-break:break-word}
+  .bp-flow{display:flex;flex-wrap:wrap;gap:.25rem;align-items:center;font-size:11px}
+  .bp-flow span{background:#eef4ff;color:#0b5cab;border-radius:.25rem;padding:.1rem .4rem}
+  .bp-empty{padding:1.5rem;text-align:center;color:#706e6b;font-size:13px}
+  .bp-footer{margin-top:1.5rem;padding:.75rem 0;border-top:1px solid #dddbda;font-size:11px;color:#706e6b;text-align:center}
+  .bp-footer a{color:#706e6b;text-decoration:underline}
+  .bp-link{color:#0b5cab;cursor:pointer;text-decoration:none}
+  .bp-link:hover{text-decoration:underline}
+  .bp-highlight{animation:bp-pulse 1.4s ease-out 2}
+  @keyframes bp-pulse{0%{box-shadow:0 0 0 0 rgba(1,118,211,.6)}100%{box-shadow:0 0 0 12px rgba(1,118,211,0)}}
+  .slds-path__nav .slds-path__item{cursor:default}
+  .bp-table-wrap{overflow-x:auto}
+  .bp-grid>*,.bp-setup>*{min-width:0}
+  .slds-card__body{overflow-x:auto}
+  .bp-main .slds-table td{white-space:normal}
+  textarea.slds-textarea{min-height:70px}
+  @media (max-width:1100px){.bp-cols-2,.bp-cols-3{grid-template-columns:1fr}.bp-setup{grid-template-columns:1fr}.bp-guide{width:280px}.bp-has-guide .bp-main{margin-right:280px}}
+</style>
+</head>
+<body>
+<!--__ICONS__-->
+<div id="app"></div>
+<div id="modal-root"></div>
+<div id="toast-root" class="slds-notify_container"></div>
+<input type="file" id="file-picker" style="display:none">
+<script>
+'use strict';
+/* ============================================================
+   Broker Portal – workshop prototype (throwaway, see D01/D26)
+   All data is fictional and lives in memory. Nothing is saved.
+   ============================================================ */
+
+/* ---------- utilities ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = v => v == null ? '' : String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MIN = 60000, HOUR = 60 * MIN, DAY = 24 * HOUR;
+const pad = n => String(n).padStart(2, '0');
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fmtTime = t => { const d = new Date(t); return pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()); };
+const fmtDate = t => { if (!t) return '—'; const d = new Date(t); return d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); };
+const fmtDT = t => t ? fmtDate(t) + ', ' + fmtTime(t) : '—';
+const fmtAED = n => 'AED ' + Math.round(n || 0).toLocaleString('en-US');
+const fmtK = n => n >= 1e6 ? (n / 1e6).toFixed(2).replace(/\.?0+$/, '') + 'M' : n >= 1e3 ? Math.round(n / 1e3) + 'k' : String(Math.round(n));
+const fmtDur = ms => {
+  const neg = ms < 0; ms = Math.abs(ms);
+  const m = Math.floor(ms / MIN), h = Math.floor(m / 60), d = Math.floor(h / 24);
+  const s = d ? d + 'd ' + (h % 24) + 'h' : h ? h + 'h ' + (m % 60) + 'm' : m + 'm';
+  return neg ? '-' + s : s;
+};
+const ago = t => t ? fmtDur(S.now - t) + ' ago' : '—';
+const sameDay = (a, b) => a && b && Math.floor(a / DAY) === Math.floor(b / DAY);
+const normPhone = p => {
+  if (!p) return '';
+  let d = String(p).replace(/[^\d+]/g, '');
+  if (d.startsWith('00')) d = '+' + d.slice(2);
+  if (d.startsWith('0')) d = '+971' + d.slice(1);
+  if (!d.startsWith('+')) d = '+' + d;
+  return d;
+};
+const validPhone = p => /^\+\d{9,15}$/.test(normPhone(p));
+const validEmail = e => !e || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+let SEQ = 2000;
+const nextId = p => p + '-' + (++SEQ);
+function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const initials = n => (n || '?').split(' ').map(x => x[0]).slice(0, 2).join('');
+
+/* ---------- icons ---------- */
+const uIcon = (n, cls = 'slds-icon_x-small slds-icon-text-default') => `<svg class="slds-icon ${cls}" aria-hidden="true"><use href="#u-${n}"></use></svg>`;
+const bIcon = (n, pos = 'left') => `<svg class="slds-button__icon slds-button__icon_${pos}" aria-hidden="true"><use href="#u-${n}"></use></svg>`;
+const bIconOnly = n => `<svg class="slds-button__icon" aria-hidden="true"><use href="#u-${n}"></use></svg>`;
+const sIcon = (n, size = 'small') => `<span class="slds-icon_container slds-icon-standard-${n.replace(/_/g, '-')}"><svg class="slds-icon slds-icon_${size}" aria-hidden="true"><use href="#s-${n}"></use></svg></span>`;
+
+/* ---------- reference data ---------- */
+const CHANNELS = ['Property Finder','Bayut','Dubizzle','Meta Lead Ads','TikTok','Google Ads','WhatsApp','Website','Referral','Walk-in'];
+const OPEN = ['New','Attempted','Contacted','Qualified','Nurture'];
+const LEAD_PATH = ['New','Attempted','Contacted','Qualified','Converted'];
+const LOST_REASONS = ['Budget mismatch','Bought through another broker','Not reachable','Not interested','Timeline too long','Wrong number'];
+const DNC_REGISTRY = ['+971555550100','+971505550199'];
+const LANGS = ['English','Arabic','Hindi','Russian','German','Malayalam','French','Mandarin'];
+const LOBS = ['Off-plan','Secondary','Rental','Commercial'];
+const COMMISSION_FLOW = ['Expected','Claimed','Invoiced','Received','Paid to agent'];
+const TEMPLATES = [
+  {id:'t1', name:'Intro – off-plan launch', ch:'WhatsApp', body:'Hi {FirstName}, this is {AgentName} from Crescent Key Realty. Thanks for your interest in {Project}. Can I share the floor plans and the current payment plan?'},
+  {id:'t2', name:'Brochure share', ch:'WhatsApp', body:'Hi {FirstName}, as promised here is the brochure for {Project}. Happy to arrange a call or a show-apartment visit this week.'},
+  {id:'t3', name:'Follow-up after no answer', ch:'WhatsApp', body:'Hi {FirstName}, I tried calling about {Project}. When is a good time to talk?'},
+  {id:'t4', name:'Viewing confirmation', ch:'Email', body:'Dear {FirstName},\n\nYour viewing for {Project} is confirmed. Please bring a copy of your passport or Emirates ID.\n\nRegards,\n{AgentName}'},
+];
+const PROJECTS = [
+  {name:'Azure Bay Residences – Tower B', developer:'Azure Bay Developments', area:'Dubai Creek Harbour', type:'Off-plan', threshold:30,
+   plan:[['Booking (EOI)',10],['Down payment',20],['Construction 40%',10],['Construction 70%',10],['On handover',50]]},
+  {name:'Palmstone Creek Villas', developer:'Palmstone Properties', area:'Dubai Hills', type:'Off-plan', threshold:20,
+   plan:[['Booking',10],['Down payment',10],['Construction 30%',10],['Construction 60%',10],['Construction 90%',10],['On handover',50]]},
+  {name:'Sandline Marina Heights', developer:'Sandline Group', area:'Dubai Marina', type:'Off-plan', threshold:20,
+   plan:[['Booking',20],['Construction 50%',20],['On handover',60]]},
+  {name:'Resale – Dubai Marina', developer:null, area:'Dubai Marina', type:'Secondary', plan:[['Deposit (Form F)',10],['Balance at DLD transfer',90]]},
+  {name:'Resale – Business Bay', developer:null, area:'Business Bay', type:'Secondary', plan:[['Deposit (Form F)',10],['Balance at DLD transfer',90]]},
+  {name:'Resale – JVC', developer:null, area:'Jumeirah Village Circle', type:'Secondary', plan:[['Deposit (Form F)',10],['Balance at DLD transfer',90]]},
+];
+const projectByName = n => PROJECTS.find(p => p.name === n);
+
+function seedUsers() {
+  const u = (id, name, role, extra = {}) => ({id, name, role, langs:[], lob:[], brn:null, brnExpiry:null, active:true, lastAssigned:0, ...extra});
+  return {
+    u_sara:   u('u_sara', 'Sara Khan', 'Agent', {langs:['English','Arabic','Hindi'], lob:['Off-plan','Secondary'], brn:'48213', brnExpiry:Date.UTC(2027,2,14)}),
+    u_omar:   u('u_omar', 'Omar Haddad', 'Agent', {langs:['Arabic','English'], lob:['Off-plan'], brn:'51177', brnExpiry:Date.UTC(2027,5,2)}),
+    u_priya:  u('u_priya', 'Priya Nair', 'Agent', {langs:['English','Hindi','Malayalam'], lob:['Secondary','Rental'], brn:'49950', brnExpiry:Date.UTC(2027,0,20)}),
+    u_dmitri: u('u_dmitri', 'Dmitri Volkov', 'Agent', {langs:['Russian','English'], lob:['Off-plan','Secondary'], brn:'45402', brnExpiry:Date.UTC(2026,9,28)}),
+    u_lena:   u('u_lena', 'Lena Fischer', 'Agent', {langs:['German','English','Russian'], lob:['Off-plan'], brn:'52310', brnExpiry:Date.UTC(2027,8,9)}),
+    u_rania:  u('u_rania', 'Rania Aziz', 'Team Leader', {langs:['Arabic','English','French'], lob:['Off-plan','Secondary'], brn:'40018', brnExpiry:Date.UTC(2027,3,1)}),
+    u_khalid: u('u_khalid', 'Khalid Mansour', 'Sales Director'),
+    u_maya:   u('u_maya', 'Maya Rizk', 'Marketing'),
+    u_faisal: u('u_faisal', 'Faisal Noor', 'Firm Admin'),
+  };
+}
+const PERSONAS = [
+  {id:'u_sara', label:'Sara Khan · Agent', home:'home'},
+  {id:'u_omar', label:'Omar Haddad · Agent', home:'home'},
+  {id:'u_priya', label:'Priya Nair · Agent', home:'home'},
+  {id:'u_lena', label:'Lena Fischer · Agent', home:'home'},
+  {id:'u_rania', label:'Rania Aziz · Team Leader', home:'dashboard'},
+  {id:'u_khalid', label:'Khalid Mansour · Sales Director', home:'dashboard'},
+  {id:'u_maya', label:'Maya Rizk · Marketing', home:'campaigns'},
+  {id:'u_faisal', label:'Faisal Noor · Firm Admin', home:'setup'},
+];
+
+function defaultConfig() {
+  const st = (name, slaDays, docs = [], extra = {}) => ({name, active:true, slaDays, docs, kyc:false, commission:false, ...extra});
+  return {
+    features:{optionB:true, licencePath:'OEM', bridge:false},
+    routing:[
+      {id:'licence', label:'Active BRN licence', desc:'Agents with an expired BRN are never assigned (RERA).', hard:true, on:true},
+      {id:'lob', label:'Line of business match', desc:'Agent covers the lead’s line of business.', on:true},
+      {id:'lang', label:'Language match', desc:'Agent speaks the lead’s preferred language.', on:true},
+      {id:'workload', label:'Lowest open workload', desc:'Fewest open leads first.', on:true, order:true},
+      {id:'rr', label:'Round-robin tie-break', desc:'Longest since last assignment first.', on:true, order:true},
+    ],
+    sla:{firstResponseMin:15, reassignAfterMin:15},
+    callWindow:{start:9, end:18},
+    stages:{
+      'Off-plan':[
+        st('Qualified', 3), st('Project pitch', 5), st('EOI / token', 7, ['EOI form','Passport copy']),
+        st('Allocation', 7), st('Reservation form', 5, ['Reservation form'], {kyc:true}),
+        st('Down payment', 14, ['Payment receipt']), st('SPA signed', 21, ['Signed SPA']),
+        st('Oqood registered', 30, ['Oqood certificate']), st('Commission claimed', 30, ['Commission invoice'], {commission:true}),
+        st('Commission received', 0),
+      ],
+      'Secondary':[
+        st('Qualified', 3), st('Form A/B signed', 5, ['Form A','Form B']), st('Viewings', 10), st('Offer', 5),
+        st('Form F (MOU) + deposit', 7, ['Form F (MOU)','Deposit cheque copy'], {kyc:true}),
+        st('Seller NOC', 14, ['Developer NOC']), st('Mortgage', 30, ['Mortgage offer letter']),
+        st('DLD transfer', 7, ['Transfer receipt']), st('Title deed issued', 3, ['Title deed'], {commission:true}),
+        st('Commission received', 0),
+      ],
+    },
+    commissionRates:[
+      {id:'r1', developer:'Azure Bay Developments', project:'Azure Bay Residences – Tower B', dealType:'Off-plan', rate:5, payer:'Developer'},
+      {id:'r2', developer:'Palmstone Properties', project:'Palmstone Creek Villas', dealType:'Off-plan', rate:6, payer:'Developer'},
+      {id:'r3', developer:'Sandline Group', project:'Sandline Marina Heights', dealType:'Off-plan', rate:4, payer:'Developer'},
+      {id:'r4', developer:'— (resale)', project:'Any', dealType:'Secondary', rate:2, payer:'Buyer'},
+    ],
+    splits:{agent:50, teamLeader:10, referral:10},
+    vat:5,
+    rulePacks:[
+      {emirate:'Dubai', regulator:'RERA / DLD', permit:'Trakheesi', registration:'Oqood · Ejari', status:'Active'},
+      {emirate:'Abu Dhabi', regulator:'ADREC (DMT)', permit:'Madhmoun', registration:'DARI · Tawtheeq (unverified)', status:'In legal review'},
+      {emirate:'Sharjah', regulator:'To research', permit:'To research', registration:'To research', status:'To research'},
+      {emirate:'Ajman', regulator:'To research', permit:'To research', registration:'To research', status:'To research'},
+      {emirate:'Ras Al Khaimah', regulator:'To research', permit:'To research', registration:'To research', status:'To research'},
+      {emirate:'Umm Al Quwain', regulator:'To research', permit:'To research', registration:'To research', status:'To research'},
+      {emirate:'Fujairah', regulator:'To research', permit:'To research', registration:'To research', status:'To research'},
+    ],
+  };
+}
+
+/* ---------- state ---------- */
+let S;
+
+function mkLead(o) {
+  return Object.assign({
+    id:nextId('L'), name:'', phone:'', phoneN:'', email:'', lang:'English', lob:'Off-plan', project:'', budget:0,
+    channel:'Website', campaignId:null, creative:'', status:'New', ownerId:null,
+    createdAt:S.now, assignedAt:null, slaDueAt:null, firstResponseAt:null, breached:false, escalated:false, reassignCount:0,
+    lastActivityAt:null, consent:true, dnc:false, refusalDate:null, lostReason:'',
+    qual:{finance:'', area:'', unitType:'', residency:'', purpose:'', timeline:'', otherBroker:''},
+    attributions:[], activities:[], routingTrace:[],
+  }, o);
+}
+function activity(rec, type, text, by, at) {
+  rec.activities.unshift({at: at || S.now, type, text, by: by || 'System'});
+  if (!at || at > (rec.lastActivityAt || 0)) rec.lastActivityAt = at || S.now;
+}
+function notify(userId, text, link) { S.notifications.unshift({id:nextId('N'), userId, text, link, at:S.now, read:false}); }
+
+function seedCampaigns(now) {
+  return [
+    {id:'C-101', name:'Azure Bay Tower B – Launch', lob:'Off-plan', project:'Azure Bay Residences – Tower B', emirate:'Dubai', status:'Active',
+     channels:['Meta Lead Ads','Property Finder','TikTok'], paused:[], budget:60000,
+     spend:{'Meta Lead Ads':22400,'Property Finder':12800,'TikTok':6000},
+     creatives:['Meta video – 60/40 payment plan','PF featured – 2BR creek view','TikTok – show apartment tour'],
+     permit:{no:'7123456', expiry:now + 40 * DAY}, targetLeads:250, targetDeals:8, start:now - 28 * DAY},
+    {id:'C-102', name:'Marina Resale Q4', lob:'Secondary', project:'Resale – Dubai Marina', emirate:'Dubai', status:'Active',
+     channels:['Bayut','Property Finder','Google Ads'], paused:[], budget:20000,
+     spend:{'Bayut':6100,'Property Finder':4300,'Google Ads':2400},
+     creatives:['Bayut premium – marina view 1BR','PF listing – vacant on transfer','Google search – marina apartments'],
+     permit:{no:'7119820', expiry:now + 5 * DAY}, targetLeads:120, targetDeals:5, start:now - 26 * DAY},
+    {id:'C-103', name:'Palmstone Villas Roadshow', lob:'Off-plan', project:'Palmstone Creek Villas', emirate:'Dubai', status:'Draft',
+     channels:['Walk-in','WhatsApp','Meta Lead Ads'], paused:[], budget:35000, spend:{},
+     creatives:['Roadshow booth – Mall','Meta carousel – villa plans'], permit:null, targetLeads:150, targetDeals:6, start:null},
+  ];
+}
+
+function emptyDeal(o) {
+  return Object.assign({
+    id:nextId('D'), name:'', clientName:'', leadId:null, contactId:null, accountId:null, type:'Off-plan', project:'', unit:'', price:0,
+    ownerId:null, campaignId:null, channel:'', stageIdx:0, stageEnteredAt:S.now, createdAt:S.now,
+    docs:{}, kyc:{docs:{}, risk:'', screening:'Pending', cash55k:false}, payments:[],
+    handover:['AML history check','Finance check','Legal & compliance check','Credit check (manual)'].map(c => ({check:c, result:'Pending', evidence:'', by:'', at:null})),
+    commission:{status:0, claimedAt:null, invoiceNo:'', receivedAt:null, paidAt:null}, coBroker:null, lost:null, activities:[],
+  }, o);
+}
+function buildPayments(deal) {
+  const p = projectByName(deal.project);
+  const plan = p ? p.plan : [['Deposit',10],['Balance',90]];
+  let due = deal.createdAt + 7 * DAY;
+  deal.payments = plan.map(([label, pct], i) => {
+    const row = {label, pct, amount:deal.price * pct / 100, due, status:'Upcoming', paidAt:null};
+    due += (i === 0 ? 30 : 120) * DAY;
+    return row;
+  });
+}
+
+function buildState() {
+  const now = Date.UTC(2026, 10, 11, 10, 12);
+  SEQ = 2000;
+  S = {now, playing:true, speed:1, view:'home', recId:null, tab:null, persona:'u_sara', cfg:defaultConfig(), users:seedUsers(),
+       leads:[], deals:[], campaigns:seedCampaigns(now), notifications:[], dealType:'Off-plan', leadFilter:'mine', setupSec:'packages',
+       guideOpen:true, guideStep:-1, notifOpen:false, routingTest:{lang:'Russian', lob:'Off-plan'}, stageTab:'Off-plan', highlight:null};
+  const r = rng(7);
+  const pick = a => a[Math.floor(r() * a.length)];
+  const firsts = ['Daniel','Fatima','Michael','Aisha','Vikram','Elena','Yusuf','Sophie','Rahul','Mariam','Oliver','Noura','Arjun','Hannah','Karim','Olga','Ben','Layla','Sanjay','Ivan','Grace','Tariq','Emma','Zainab','Lucas','Meera','Hamad','Natalia','Peter','Reem','Kavya','Sergei','Amal','Thomas','Divya','Omar'];
+  const lasts = ['Carter','Al Suwaidi','Brennan','Rahman','Mehta','Petrova','Hassan','Laurent','Iyer','Al Zaabi','Grant','Al Hammadi','Kapoor','Becker','Nasser','Smirnova','Walsh','Haddad','Reddy','Orlov','Kim','Saleh','Dubois','Qureshi','Silva','Pillai','Al Ketbi','Ivanova','Morris','Farouk','Menon','Popov','Khoury','Baker','Sharma','Yousef'];
+  const agentsFor = (lob, at) => Object.values(S.users).filter(a => a.role === 'Agent' && a.lob.includes(lob) && a.brnExpiry > at);
+  const camps = S.campaigns;
+
+  for (let i = 0; i < 38; i++) {
+    const roll = r();
+    const camp = roll < 0.5 ? camps[0] : roll < 0.8 ? camps[1] : null;
+    const lob = camp ? camp.lob : pick(['Off-plan','Secondary']);
+    const channel = camp ? pick(camp.channels) : pick(['Referral','Walk-in','Website','WhatsApp']);
+    const created = now - Math.floor((2 + r() * 26) * DAY) - Math.floor(r() * 8 * HOUR);
+    const lang = pick(['English','English','English','Arabic','Arabic','Hindi','Russian']);
+    const elig = agentsFor(lob, created);
+    const owner = elig.find(a => a.langs.includes(lang)) && r() < 0.7 ? pick(elig.filter(a => a.langs.includes(lang))) : pick(elig);
+    const respMin = r() < 0.75 ? 2 + Math.floor(r() * 13) : 16 + Math.floor(r() * 80);
+    const s = r();
+    const status = s < 0.16 ? 'Converted' : s < 0.36 ? 'Lost' : s < 0.47 ? 'Qualified' : s < 0.58 ? 'Nurture' : s < 0.8 ? 'Contacted' : 'Attempted';
+    const project = camp ? camp.project : lob === 'Off-plan' ? pick(PROJECTS.slice(0, 3)).name : pick(PROJECTS.slice(3)).name;
+    const budget = Math.round(((lob === 'Off-plan' ? 1.2 : 0.9) + r() * 3.2) * 20) * 50000;
+    const name = firsts[i % firsts.length] + ' ' + lasts[(i * 7 + Math.floor(i / firsts.length)) % lasts.length];
+    const phone = '+97150' + String(1000000 + Math.floor(r() * 8999999));
+    const l = mkLead({name, phone, phoneN:normPhone(phone), email:name.toLowerCase().replace(/[^a-z]+/g, '.') + '@example.com', lang, lob, project, budget, channel,
+      campaignId:camp ? camp.id : null, creative:camp ? pick(camp.creatives) : '', status, ownerId:owner.id, createdAt:created, assignedAt:created,
+      slaDueAt:created + 15 * MIN, firstResponseAt:created + respMin * MIN, breached:respMin > 15});
+    l.attributions.push({campaignId:l.campaignId, channel, creative:l.creative, at:created});
+    activity(l, 'system', `Captured from ${channel}${camp ? ' · ' + camp.name : ''}`, 'System', created);
+    activity(l, 'assign', `Routed to ${owner.name}`, 'Routing engine', created + 2000);
+    if (l.breached) activity(l, 'escalate', 'First-response SLA breached. Escalated to Rania Aziz (Team Leader).', 'SLA monitor', created + 15 * MIN);
+    activity(l, 'call', 'Outbound call – connected', owner.name, created + respMin * MIN);
+    const lastAt = created + Math.floor(r() * (now - created) * (status === 'Nurture' || status === 'Attempted' ? 0.4 : 0.9));
+    if (lastAt > created + respMin * MIN) activity(l, pick(['chat','call','email']), 'Follow-up logged', owner.name, lastAt);
+    if (['Qualified','Converted'].includes(status)) {
+      l.qual = {finance:pick(['Cash','Mortgage – pre-approved','Mortgage – not yet']), area:projectByName(project).area, unitType:pick(['1BR','2BR','3BR','Villa']),
+        residency:pick(['Resident','Non-resident']), purpose:pick(['Live','Invest']), timeline:pick(['0–3 months','3–6 months']), otherBroker:'No'};
+    }
+    if (status === 'Lost') { l.lostReason = pick(LOST_REASONS); activity(l, 'status', 'Marked Lost – ' + l.lostReason, owner.name, lastAt + HOUR); }
+    S.leads.push(l);
+  }
+
+  // Deals for converted seed leads
+  const converted = S.leads.filter(l => l.status === 'Converted');
+  converted.forEach((l, i) => {
+    const stages = S.cfg.stages[l.lob];
+    const created = l.createdAt + 3 * DAY;
+    const stageIdx = [stages.length - 1, stages.length - 1, 6, 3, 2, 8, 5, 1][i % 8];
+    const d = emptyDeal({name:`${l.name} – ${l.lob === 'Off-plan' ? 'Unit ' + (100 + Math.floor(r() * 2400)) : 'Apt ' + (1000 + Math.floor(r() * 3000))}`,
+      clientName:l.name, leadId:l.id, contactId:nextId('CT'), accountId:nextId('AC'), type:l.lob, project:l.project, unit:'', price:l.budget, ownerId:l.ownerId,
+      campaignId:l.campaignId, channel:l.channel, stageIdx, createdAt:created, stageEnteredAt:Math.min(now - DAY, created + stageIdx * 2 * DAY)});
+    d.unit = d.name.split('– ')[1];
+    stages.forEach((st, si) => { if (si < stageIdx) st.docs.forEach(doc => d.docs[doc] = {file:doc.toLowerCase().replace(/[^a-z]+/g, '-') + '.pdf', at:created + si * DAY, by:S.users[l.ownerId].name}); });
+    if (stageIdx >= 5) { d.kyc = {docs:{'Passport':true,'Emirates ID / visa':true,'Source of funds declaration':true}, risk:'Low', screening:'Clear', cash55k:false}; }
+    buildPayments(d);
+    const paidUpTo = d.type === 'Off-plan' ? (stageIdx >= 6 ? 2 : stageIdx >= 3 ? 1 : 0) : (stageIdx >= 5 ? 1 : 0) + (stageIdx >= 8 ? 1 : 0);
+    d.payments.forEach((p, pi) => { if (pi < paidUpTo) { p.status = 'Paid'; p.paidAt = p.due; } });
+    if (stageIdx === stages.length - 1) { d.commission = {status:i % 2 ? 4 : 3, claimedAt:now - 20 * DAY, invoiceNo:'INV-' + (5100 + i), receivedAt:now - 6 * DAY, paidAt:i % 2 ? now - 2 * DAY : null}; }
+    if (stageIdx === 8 && d.type === 'Off-plan') { d.commission = {status:2, claimedAt:now - 41 * DAY, invoiceNo:'INV-' + (5200 + i), receivedAt:null, paidAt:null}; }
+    activity(d, 'status', `Deal created from lead ${l.id}`, S.users[l.ownerId].name, created);
+    S.deals.push(d);
+  });
+
+  // Hand-made story records
+  const add = o => { const l = mkLead(o); l.phoneN = normPhone(l.phone); S.leads.push(l); return l; };
+  const rohit = add({name:'Rohit Malhotra', phone:'+971 55 410 2231', email:'rohit.m@example.com', lang:'Hindi', lob:'Off-plan', project:'Azure Bay Residences – Tower B',
+    budget:2600000, channel:'Meta Lead Ads', campaignId:'C-101', creative:'Meta video – 60/40 payment plan', ownerId:'u_sara',
+    createdAt:now - 9 * MIN, assignedAt:now - 9 * MIN, slaDueAt:now + 6 * MIN});
+  rohit.attributions.push({campaignId:'C-101', channel:'Meta Lead Ads', creative:rohit.creative, at:rohit.createdAt});
+  activity(rohit, 'system', 'Captured from Meta Lead Ads · Azure Bay Tower B – Launch', 'System', rohit.createdAt);
+  activity(rohit, 'assign', 'Routed to Sara Khan (language: Hindi, line of business: Off-plan, lowest workload)', 'Routing engine', rohit.createdAt + 2000);
+  notify('u_sara', 'New lead assigned: Rohit Malhotra (Meta Lead Ads)', {view:'lead', id:rohit.id});
+
+  const chloe = add({name:'Chloé Martin', phone:'+971 52 880 1144', email:'chloe.martin@example.com', lang:'English', lob:'Off-plan', project:'Azure Bay Residences – Tower B',
+    budget:2400000, channel:'Property Finder', campaignId:'C-101', creative:'PF featured – 2BR creek view', status:'Qualified', ownerId:'u_sara',
+    createdAt:now - 4 * DAY, assignedAt:now - 4 * DAY, slaDueAt:now - 4 * DAY + 15 * MIN, firstResponseAt:now - 4 * DAY + 6 * MIN,
+    qual:{finance:'Cash', area:'Dubai Creek Harbour', unitType:'2BR', residency:'Non-resident', purpose:'Invest', timeline:'0–3 months', otherBroker:'No'}});
+  chloe.attributions.push({campaignId:'C-101', channel:'Property Finder', creative:chloe.creative, at:chloe.createdAt});
+  activity(chloe, 'system', 'Captured from Property Finder · Azure Bay Tower B – Launch', 'System', chloe.createdAt);
+  activity(chloe, 'call', 'Outbound call – connected. Interested in 2BR, cash buyer.', 'Sara Khan', chloe.createdAt + 6 * MIN);
+  activity(chloe, 'chat', 'WhatsApp: brochure shared', 'Sara Khan', chloe.createdAt + DAY);
+  activity(chloe, 'status', 'Status changed to Qualified', 'Sara Khan', now - 20 * HOUR);
+
+  const ahmed = add({name:'Ahmed Al Mansoori', phone:'+971 50 234 5678', email:'ahmed.mansoori@example.com', lang:'Arabic', lob:'Secondary', project:'Resale – Dubai Marina',
+    budget:1850000, channel:'Bayut', campaignId:'C-102', creative:'Bayut premium – marina view 1BR', status:'Contacted', ownerId:'u_priya',
+    createdAt:now - 6 * DAY, assignedAt:now - 6 * DAY, slaDueAt:now - 6 * DAY + 15 * MIN, firstResponseAt:now - 6 * DAY + 9 * MIN});
+  ahmed.attributions.push({campaignId:'C-102', channel:'Bayut', creative:ahmed.creative, at:ahmed.createdAt});
+  activity(ahmed, 'system', 'Captured from Bayut · Marina Resale Q4', 'System', ahmed.createdAt);
+  activity(ahmed, 'call', 'Outbound call – connected. Looking for a 1BR, mortgage buyer.', 'Priya Nair', ahmed.createdAt + 9 * MIN);
+
+  const q = add({name:'Al Noor Trading LLC', phone:'+971 4 330 7788', email:'admin@alnoor-trading.example', lang:'Arabic', lob:'Commercial', project:'',
+    budget:5500000, channel:'Website', status:'New', ownerId:null, createdAt:now - 50 * MIN});
+  q.routingTrace = [{rule:'Line of business match', note:'No agent covers Commercial – lead sent to the unassigned queue', rows:[]}];
+  activity(q, 'system', 'Captured from Website enquiry form', 'System', q.createdAt);
+  activity(q, 'assign', 'No eligible agent (Commercial). Placed in the unassigned queue for a team leader.', 'Routing engine', q.createdAt + 2000);
+
+  const hl = add({name:'Hassan Qureshi', phone:'+971 56 902 4410', email:'hassan.q@example.com', lang:'English', lob:'Off-plan', project:'Azure Bay Residences – Tower B',
+    budget:2350000, channel:'Meta Lead Ads', campaignId:'C-101', creative:'Meta video – 60/40 payment plan', status:'Converted', ownerId:'u_sara',
+    createdAt:now - 19 * DAY, assignedAt:now - 19 * DAY, slaDueAt:now - 19 * DAY + 15 * MIN, firstResponseAt:now - 19 * DAY + 4 * MIN,
+    qual:{finance:'Mortgage – pre-approved', area:'Dubai Creek Harbour', unitType:'2BR', residency:'Resident', purpose:'Live', timeline:'0–3 months', otherBroker:'No'}});
+  hl.attributions.push({campaignId:'C-101', channel:'Meta Lead Ads', creative:hl.creative, at:hl.createdAt});
+  activity(hl, 'system', 'Captured from Meta Lead Ads · Azure Bay Tower B – Launch', 'System', hl.createdAt);
+  activity(hl, 'status', 'Converted to deal', 'Sara Khan', now - 15 * DAY);
+  const hd = emptyDeal({name:'Hassan Qureshi – B-1407', clientName:'Hassan Qureshi', leadId:hl.id, contactId:'CT-1901', accountId:'AC-1901', type:'Off-plan',
+    project:'Azure Bay Residences – Tower B', unit:'B-1407', price:2350000, ownerId:'u_sara', campaignId:'C-101', channel:'Meta Lead Ads',
+    stageIdx:4, createdAt:now - 15 * DAY, stageEnteredAt:now - 2 * DAY});
+  hd.docs = {'EOI form':{file:'eoi-b1407.pdf', at:now - 12 * DAY, by:'Sara Khan'}, 'Passport copy':{file:'passport-hq.pdf', at:now - 12 * DAY, by:'Sara Khan'}};
+  hd.kyc = {docs:{'Passport':true}, risk:'', screening:'Pending', cash55k:false};
+  buildPayments(hd); hd.payments[0].status = 'Paid'; hd.payments[0].paidAt = now - 8 * DAY;
+  activity(hd, 'status', 'Deal created from lead ' + hl.id, 'Sara Khan', hd.createdAt);
+  activity(hd, 'doc', 'EOI form and passport copy uploaded', 'Sara Khan', now - 12 * DAY);
+  activity(hd, 'money', 'Booking (EOI) payment recorded as paid to developer escrow', 'Sara Khan', now - 8 * DAY);
+  activity(hd, 'status', 'Stage moved to Reservation form', 'Sara Khan', now - 2 * DAY);
+  S.deals.push(hd);
+  S.story = {rohit:rohit.id, chloe:chloe.id, ahmed:ahmed.id, hassanDeal:hd.id};
+  S.leads.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+/* ---------- selectors ---------- */
+const me = () => S.users[S.persona];
+const isAgent = () => me().role === 'Agent';
+const canSeeAll = () => !isAgent();
+const agents = () => Object.values(S.users).filter(u => u.role === 'Agent');
+const userName = id => id && S.users[id] ? S.users[id].name : 'Unassigned queue';
+const campaignById = id => S.campaigns.find(c => c.id === id);
+const leadById = id => S.leads.find(l => l.id === id);
+const dealById = id => S.deals.find(d => d.id === id);
+const visibleLeads = () => S.leads.filter(l => canSeeAll() || l.ownerId === S.persona);
+const visibleDeals = () => S.deals.filter(d => canSeeAll() || d.ownerId === S.persona);
+const openLoad = id => S.leads.filter(l => l.ownerId === id && OPEN.includes(l.status)).length;
+const stagesOf = type => S.cfg.stages[type] || [];
+const stageOf = d => stagesOf(d.type)[d.stageIdx];
+const nextActiveIdx = d => { const st = stagesOf(d.type); for (let i = d.stageIdx + 1; i < st.length; i++) if (st[i].active) return i; return -1; };
+const commissionTriggerIdx = type => stagesOf(type).findIndex(s => s.commission);
+const paidPct = d => d.payments.filter(p => p.status === 'Paid').reduce((a, p) => a + p.pct, 0);
+const KYC_DOCS = ['Passport','Emirates ID / visa','Source of funds declaration'];
+const kycComplete = d => KYC_DOCS.every(k => d.kyc.docs[k]) && d.kyc.screening === 'Clear' && !!d.kyc.risk;
+
+function leadScore(l) {
+  let s = 35;
+  if (l.budget >= 2000000) s += 15; else if (l.budget >= 1000000) s += 8;
+  if (l.qual.finance === 'Cash') s += 15; else if (l.qual.finance === 'Mortgage – pre-approved') s += 10;
+  if (l.qual.timeline === '0–3 months') s += 15; else if (l.qual.timeline === '3–6 months') s += 7;
+  if (l.qual.purpose) s += 5;
+  if (l.firstResponseAt) s += 5;
+  if (l.attributions.length > 1) s += 8;
+  if (l.qual.otherBroker === 'Yes') s -= 15;
+  if (l.status === 'Lost') s = Math.min(s, 10);
+  return Math.max(0, Math.min(100, s));
+}
+
+function commissionCalc(d) {
+  const rates = S.cfg.commissionRates;
+  const rate = rates.find(r => r.dealType === d.type && r.project === d.project) || rates.find(r => r.dealType === d.type && r.project === 'Any') || {rate:0, payer:'—', id:null};
+  const gross = d.price * rate.rate / 100;
+  const vat = gross * S.cfg.vat / 100;
+  const coBroker = d.coBroker ? gross * d.coBroker.split / 100 : 0;
+  const firmNet = gross - coBroker;
+  const sp = S.cfg.splits;
+  const lead = leadById(d.leadId);
+  const referral = lead && lead.channel === 'Referral' ? firmNet * sp.referral / 100 : 0;
+  const agent = firmNet * sp.agent / 100, tl = firmNet * sp.teamLeader / 100;
+  return {rate:rate.rate, payer:rate.payer, rateId:rate.id, gross, vat, invoice:gross + vat, coBroker, firmNet, agent, tl, referral, retained:firmNet - agent - tl - referral};
+}
+
+/* ---------- engines: routing, capture, SLA, telemarketing ---------- */
+function routeLead(lead, exclude = []) {
+  const trace = [];
+  let pool = agents().filter(a => a.active && !exclude.includes(a.id));
+  const fns = {
+    licence: a => ({ok:a.brnExpiry > S.now, why:(a.brnExpiry > S.now ? 'BRN ' + a.brn + ' valid to ' : 'BRN ' + a.brn + ' expired ') + fmtDate(a.brnExpiry)}),
+    lob: a => ({ok:a.lob.includes(lead.lob), why:a.lob.join(', ')}),
+    lang: a => ({ok:a.langs.includes(lead.lang), why:a.langs.join(', ')}),
+  };
+  if (exclude.length) trace.push({rule:'Re-assignment', note:'Excluded previous owner: ' + exclude.map(userName).join(', '), rows:[]});
+  for (const rule of S.cfg.routing) {
+    if (rule.order) continue;
+    if (!rule.on) { trace.push({rule:rule.label, note:'Switched off in Setup – not applied', rows:[]}); continue; }
+    const rows = pool.map(a => ({agent:a.name, ...fns[rule.id](a)}));
+    const passed = pool.filter((a, i) => rows[i].ok);
+    if (!passed.length && !rule.hard && rule.id === 'lang' && pool.length) { trace.push({rule:rule.label, note:'No agent speaks ' + lead.lang + ' – rule relaxed', rows}); continue; }
+    trace.push({rule:rule.label, note:passed.length + ' of ' + pool.length + ' passed', rows});
+    pool = passed;
+    if (!pool.length) break;
+  }
+  if (!pool.length) { trace.push({rule:'Result', note:'No eligible agent – lead placed in the unassigned queue', rows:[]}); return {owner:null, trace}; }
+  const orderRules = S.cfg.routing.filter(r => r.order && r.on);
+  pool.sort((a, b) => { for (const r of orderRules) { const c = r.id === 'workload' ? openLoad(a.id) - openLoad(b.id) : (a.lastAssigned || 0) - (b.lastAssigned || 0); if (c) return c; } return 0; });
+  if (orderRules.length) trace.push({rule:orderRules.map(r => r.label).join(' → '), note:pool.map(a => `${a.name} (${openLoad(a.id)} open)`).join(' · '), rows:[]});
+  trace.push({rule:'Result', note:'Assigned to ' + pool[0].name, rows:[]});
+  return {owner:pool[0], trace};
+}
+
+function assignLead(lead, owner, trace, reason) {
+  lead.ownerId = owner ? owner.id : null;
+  lead.assignedAt = S.now;
+  lead.slaDueAt = S.now + S.cfg.sla.firstResponseMin * MIN;
+  lead.escalated = false;
+  lead.routingTrace = trace;
+  if (owner) {
+    owner.lastAssigned = S.now;
+    activity(lead, 'assign', `${reason || 'Routed'} to ${owner.name}. First-response SLA: ${S.cfg.sla.firstResponseMin} min (due ${fmtTime(lead.slaDueAt)}).`, 'Routing engine');
+    notify(owner.id, `New lead assigned: ${lead.name} (${lead.channel})`, {view:'lead', id:lead.id});
+  } else {
+    activity(lead, 'assign', 'No eligible agent. Placed in the unassigned queue.', 'Routing engine');
+    notify('u_rania', `Lead in unassigned queue: ${lead.name}`, {view:'lead', id:lead.id});
+  }
+}
+
+function captureLead(inp) {
+  const errors = [];
+  if (!inp.name || !inp.name.trim()) errors.push('Name is required.');
+  if (!validPhone(inp.phone)) errors.push('Phone must be a valid international number (9–15 digits).');
+  if (!validEmail(inp.email)) errors.push('Email format is invalid.');
+  if (!LOBS.includes(inp.lob)) errors.push('Line of business is required.');
+  if (!inp.channel) errors.push('Source channel must be declared.');
+  if (errors.length) return {ok:false, errors};
+  const phoneN = normPhone(inp.phone);
+  const email = (inp.email || '').trim().toLowerCase();
+  const camp = inp.campaignId ? campaignById(inp.campaignId) : null;
+  const attribution = {campaignId:camp ? camp.id : null, channel:inp.channel, creative:inp.creative || '', at:S.now};
+  const existing = S.leads.find(l => l.phoneN === phoneN || (email && l.email && l.email.toLowerCase() === email));
+  if (existing) {
+    existing.attributions.push(attribution);
+    activity(existing, 'merge', `Repeat enquiry via ${inp.channel}${camp ? ' · ' + camp.name : ''}. Matched on ${existing.phoneN === phoneN ? 'phone' : 'email'} – merged into this lead, no duplicate created.`, 'Dedupe');
+    if (['Lost','Nurture'].includes(existing.status)) {
+      existing.status = 'New'; existing.firstResponseAt = null; existing.slaDueAt = S.now + S.cfg.sla.firstResponseMin * MIN; existing.escalated = false;
+      activity(existing, 'status', 'Re-engaged: status reset to New, SLA restarted.', 'Dedupe');
+    }
+    if (existing.ownerId) notify(existing.ownerId, `Repeat enquiry from your lead ${existing.name} (${inp.channel})`, {view:'lead', id:existing.id});
+    return {ok:true, lead:existing, merged:true};
+  }
+  const lead = mkLead({name:inp.name.trim(), phone:inp.phone, phoneN, email:inp.email || '', lang:inp.lang || 'English', lob:inp.lob, project:inp.project || '',
+    budget:Number(inp.budget) || 0, channel:inp.channel, campaignId:attribution.campaignId, creative:attribution.creative, consent:inp.consent !== false});
+  lead.attributions.push(attribution);
+  activity(lead, 'system', `Captured from ${inp.channel}${camp ? ' · ' + camp.name : ''}${attribution.creative ? ' · creative “' + attribution.creative + '”' : ''}`, 'System');
+  activity(lead, 'system', 'Dedupe: no existing lead in this firm with the same phone or email.', 'Dedupe');
+  lead.dnc = DNC_REGISTRY.includes(phoneN);
+  activity(lead, lead.dnc ? 'block' : 'system',
+    lead.dnc ? 'Compliance: number is on the Do Not Call registry. Calls are blocked; messaging only with recorded consent.' :
+    `Compliance: not on DNC registry · consent ${lead.consent ? 'recorded (' + inp.channel + ' form)' : 'missing'}.`, 'Compliance');
+  S.leads.unshift(lead);
+  const {owner, trace} = routeLead(lead);
+  assignLead(lead, owner, trace, 'Routed');
+  return {ok:true, lead, merged:false};
+}
+
+const SIMS = {
+  pf:{label:'Property Finder – new enquiry', data:{name:'James Whitmore', phone:'+971 50 123 9876', email:'james.whitmore@example.com', lang:'English', lob:'Off-plan',
+      project:'Azure Bay Residences – Tower B', budget:2100000, channel:'Property Finder', campaignId:'C-101', creative:'PF featured – 2BR creek view'}},
+  ru:{label:'Meta lead form – Russian speaker', data:{name:'Anna Sokolova', phone:'+971 58 777 3021', email:'anna.sokolova@example.com', lang:'Russian', lob:'Off-plan',
+      project:'Azure Bay Residences – Tower B', budget:3200000, channel:'Meta Lead Ads', campaignId:'C-101', creative:'Meta video – 60/40 payment plan'}},
+  dup:{label:'Repeat enquiry – existing client', data:{name:'Ahmed Mansoori', phone:'050 234 5678', email:'', lang:'Arabic', lob:'Secondary',
+      project:'Resale – Dubai Marina', budget:1900000, channel:'Property Finder', campaignId:'C-102', creative:'PF listing – vacant on transfer'}},
+  dnc:{label:'Number on DNC registry', data:{name:'Mark Ellison', phone:'+971 55 555 0100', email:'', lang:'English', lob:'Secondary',
+      project:'Resale – Business Bay', budget:1400000, channel:'Dubizzle', campaignId:null, creative:''}},
+  com:{label:'Commercial enquiry (no agent covers it)', data:{name:'Gulfstar Logistics FZE', phone:'+971 4 551 0099', email:'ops@gulfstar.example', lang:'English', lob:'Commercial',
+      project:'', budget:7800000, channel:'Website', campaignId:null, creative:''}},
+};
+function simulate(key) {
+  const sim = SIMS[key];
+  const data = {...sim.data};
+  if (key !== 'dup' && S.leads.some(l => l.phoneN === normPhone(data.phone))) {
+    data.phone = '+97150' + String(1000000 + Math.floor(Math.random() * 8999999));
+    data.name = data.name + ' (2)';
+  }
+  const res = captureLead(data);
+  if (!res.ok) { toast('error', 'Capture failed', res.errors.join(' ')); return; }
+  if (res.merged) toast('info', 'Repeat enquiry merged', `${esc(res.lead.name)}: new attribution added, no duplicate created.`);
+  else if (res.lead.ownerId) toast('success', 'Lead captured and routed', `${esc(res.lead.name)} → ${esc(userName(res.lead.ownerId))}`);
+  else toast('warning', 'Lead sent to the unassigned queue', `${esc(res.lead.name)}: no eligible agent.`);
+  go('lead', res.lead.id);
+}
+
+function firstResponse(lead) {
+  if (!lead.firstResponseAt) {
+    lead.firstResponseAt = S.now;
+    const ms = S.now - lead.assignedAt;
+    activity(lead, 'system', `First response in ${fmtDur(ms)} (SLA ${S.cfg.sla.firstResponseMin} min) – ${ms <= S.cfg.sla.firstResponseMin * MIN ? 'met' : 'missed'}.`, 'SLA monitor');
+  }
+}
+
+function slaEngine() {
+  let changed = false;
+  for (const l of S.leads) {
+    if (l.status !== 'New' || !l.ownerId || l.firstResponseAt || !l.slaDueAt) continue;
+    if (!l.escalated && S.now > l.slaDueAt) {
+      l.escalated = true; l.breached = true;
+      activity(l, 'escalate', `First-response SLA breached (${S.cfg.sla.firstResponseMin} min). Escalated to Rania Aziz (Team Leader).`, 'SLA monitor');
+      notify('u_rania', `SLA breached: ${l.name} (owner ${userName(l.ownerId)})`, {view:'lead', id:l.id});
+      notify(l.ownerId, `SLA breached on ${l.name} – respond now or it will be re-assigned`, {view:'lead', id:l.id});
+      toast('warning', 'SLA breached – escalated', `${esc(l.name)} · owner ${esc(userName(l.ownerId))} · Team Leader notified`);
+      changed = true;
+    } else if (l.escalated && S.now > l.slaDueAt + S.cfg.sla.reassignAfterMin * MIN) {
+      const prev = l.ownerId;
+      const {owner, trace} = routeLead(l, [prev]);
+      l.reassignCount++;
+      activity(l, 'escalate', `No response ${S.cfg.sla.reassignAfterMin} min after breach. Removed from ${userName(prev)}.`, 'SLA monitor');
+      notify(prev, `Lead re-assigned away from you: ${l.name}`, {view:'lead', id:l.id});
+      assignLead(l, owner, trace, 'Re-assigned');
+      toast('error', 'Lead re-assigned', `${esc(l.name)}: ${esc(userName(prev))} → ${esc(userName(l.ownerId))}`);
+      if (S.slowAfter === l.id) { S.speed = 1; S.slowAfter = null; setTimeout(() => toast('info', 'Clock back to real time', 'Step 4 complete.'), 600); }
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+function callBlocks(lead) {
+  const h = new Date(S.now).getUTCHours(), {start, end} = S.cfg.callWindow, b = [];
+  if (h < start || h >= end) b.push(`Outside the permitted calling window (${pad(start)}:00–${pad(end)}:00 GST). It is ${fmtTime(S.now)}.`);
+  if (lead.dnc) b.push('The number is on the Do Not Call registry.');
+  if (lead.refusalDate && sameDay(lead.refusalDate, S.now)) b.push('The client refused a call today. No repeat call the same day.');
+  return b;
+}
+
+/* ---------- deals ---------- */
+function gateCheck(d) {
+  const st = stageOf(d), problems = [];
+  const missing = st.docs.filter(doc => !d.docs[doc]);
+  if (missing.length) problems.push('Missing documents: ' + missing.join(', '));
+  if (st.kyc && !kycComplete(d)) problems.push('KYC is incomplete (passport, Emirates ID/visa, source of funds, sanctions screening and risk rating)');
+  const ni = nextActiveIdx(d);
+  if (ni < 0) return {ok:false, problems:['This is the final stage.'], next:-1};
+  const nst = stagesOf(d.type)[ni];
+  const proj = projectByName(d.project);
+  if (nst.commission && d.type === 'Off-plan' && proj && paidPct(d) < proj.threshold) problems.push(`Developer commission threshold not met: ${paidPct(d)}% paid of ${proj.threshold}% required`);
+  if (ni === stagesOf(d.type).length - 1 && d.commission.status < 3) problems.push('Record the commission as received (Commission tab) before closing the deal');
+  return {ok:!problems.length, problems, next:ni};
+}
+function advanceDeal(d, toIdx) {
+  if (d.lost) { toast('error', 'Deal is closed', 'Lost deals can’t move.'); return false; }
+  const g = gateCheck(d);
+  if (toIdx != null && toIdx !== g.next) {
+    if (toIdx < d.stageIdx) { d.stageIdx = toIdx; d.stageEnteredAt = S.now; activity(d, 'status', 'Stage moved back to ' + stageOf(d).name, me().name); toast('info', 'Stage moved back', stageOf(d).name); return true; }
+    toast('error', 'Stages can’t be skipped', 'Advance one stage at a time so every gate is checked.'); return false;
+  }
+  if (!g.ok) {
+    activity(d, 'block', 'Stage advance blocked: ' + g.problems.join('; '), 'Stage gate');
+    toast('error', `Can’t leave “${stageOf(d).name}”`, g.problems.map(esc).join('<br>'));
+    return false;
+  }
+  const from = stageOf(d).name;
+  d.stageIdx = g.next; d.stageEnteredAt = S.now;
+  activity(d, 'status', `Stage moved: ${from} → ${stageOf(d).name}`, me().name);
+  toast('success', 'Stage advanced', `${esc(d.name)} is now in ${esc(stageOf(d).name)}`);
+  return true;
+}
+
+/* ---------- toast & modal ---------- */
+function toast(kind, title, html) {
+  const icon = {success:'success', warning:'warning', error:'error', info:'info'}[kind];
+  const el = document.createElement('div');
+  el.className = `slds-notify slds-notify_toast slds-theme_${kind}`;
+  el.setAttribute('role', 'status');
+  el.innerHTML = `<span class="slds-icon_container slds-m-right_small slds-no-flex slds-align-top">${uIcon(icon, 'slds-icon_small' + (kind === 'warning' ? ' slds-icon-text-default' : ''))}</span>
+    <div class="slds-notify__content"><h2 class="slds-text-heading_small">${esc(title)}</h2>${html ? `<p class="slds-m-top_xx-small">${html}</p>` : ''}</div>
+    <div class="slds-notify__close"><button class="slds-button slds-button_icon ${kind === 'warning' ? '' : 'slds-button_icon-inverse'}" title="Close" data-act="closeToast">${bIconOnly('close')}</button></div>`;
+  $('#toast-root').appendChild(el);
+  while ($('#toast-root').children.length > 3) $('#toast-root').firstChild.remove();
+  setTimeout(() => el.remove(), 5500);
+}
+function openModal(title, body, footer, size) {
+  $('#modal-root').innerHTML = `<section role="dialog" aria-modal="true" class="slds-modal slds-fade-in-open ${size ? 'slds-modal_' + size : ''}">
+    <div class="slds-modal__container">
+      <button class="slds-button slds-button_icon slds-modal__close" title="Close" data-act="closeModal">${bIconOnly('close')}</button>
+      <div class="slds-modal__header"><h1 class="slds-modal__title slds-hyphenate">${title}</h1></div>
+      <div class="slds-modal__content slds-p-around_medium" id="modal-body">${body}</div>
+      <div class="slds-modal__footer">${footer || '<button class="slds-button slds-button_neutral" data-act="closeModal">Close</button>'}</div>
+    </div></section><div class="slds-backdrop slds-backdrop_open"></div>`;
+}
+const closeModal = () => { $('#modal-root').innerHTML = ''; };
+const modalError = msgs => { const el = $('#modal-errors'); if (el) el.innerHTML = msgs.length ? `<div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small" role="alert"><h2>${msgs.map(esc).join('<br>')}</h2></div>` : ''; };
+const val = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+
+/* ---------- form helpers ---------- */
+const fInput = (id, label, value = '', type = 'text', req = false, extra = '') => `<div class="slds-form-element slds-m-bottom_x-small"><label class="slds-form-element__label" for="${id}">${req ? '<abbr class="slds-required" title="required">* </abbr>' : ''}${esc(label)}</label><div class="slds-form-element__control"><input class="slds-input" id="${id}" type="${type}" value="${esc(value)}" ${extra}></div></div>`;
+const fSelect = (id, label, opts, value = '', req = false, extra = '') => `<div class="slds-form-element slds-m-bottom_x-small"><label class="slds-form-element__label" for="${id}">${req ? '<abbr class="slds-required" title="required">* </abbr>' : ''}${esc(label)}</label><div class="slds-form-element__control"><div class="slds-select_container"><select class="slds-select" id="${id}" ${extra}>${opts.map(o => { const [v, t] = Array.isArray(o) ? o : [o, o]; return `<option value="${esc(v)}" ${String(v) === String(value) ? 'selected' : ''}>${esc(t)}</option>`; }).join('')}</select></div></div></div>`;
+const fToggle = (label, checked, act, attrs = '', disabled = false) => `<div class="slds-form-element"><label class="slds-checkbox_toggle slds-grid"><span class="slds-form-element__label slds-m-bottom_none">${label}</span><input type="checkbox" ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''} data-act="${act}" ${attrs}><span class="slds-checkbox_faux_container"><span class="slds-checkbox_faux"></span><span class="slds-checkbox_on">On</span><span class="slds-checkbox_off">Off</span></span></label></div>`;
+const badge = (text, theme = '') => `<span class="slds-badge ${theme}">${esc(text)}</span>`;
+const statusBadge = s => badge(s, {New:'slds-badge_inverse', Attempted:'slds-theme_warning', Contacted:'', Qualified:'slds-theme_success', Nurture:'slds-badge_lightest', Converted:'slds-theme_success', Lost:'slds-theme_error'}[s] || '');
+function card(title, body, actions = '', icon = '') {
+  return `<article class="slds-card"><div class="slds-card__header slds-grid"><header class="slds-media slds-media_center slds-has-flexi-truncate">${icon ? `<div class="slds-media__figure">${sIcon(icon)}</div>` : ''}<div class="slds-media__body"><h2 class="slds-card__header-title"><span class="slds-truncate">${title}</span></h2></div>${actions ? `<div class="slds-no-flex">${actions}</div>` : ''}</header></div><div class="slds-card__body slds-card__body_inner">${body}</div></article>`;
+}
+function pageHeader(icon, kicker, title, actions = '', meta = '') {
+  return `<div class="slds-page-header slds-page-header_record-home slds-m-bottom_small"><div class="slds-page-header__row"><div class="slds-page-header__col-title"><div class="slds-media"><div class="slds-media__figure">${sIcon(icon, 'medium')}</div><div class="slds-media__body"><div class="slds-page-header__name"><div class="slds-page-header__name-title"><h1><span>${esc(kicker)}</span><span class="slds-page-header__title slds-truncate">${title}</span></h1></div></div></div></div></div>${actions ? `<div class="slds-page-header__col-actions"><div class="slds-page-header__controls"><div class="slds-page-header__control">${actions}</div></div></div>` : ''}</div>${meta ? `<div class="slds-page-header__row slds-page-header__row_gutters"><div class="slds-page-header__col-details">${meta}</div></div>` : ''}</div>`;
+}
+const detailsRow = items => `<ul class="slds-page-header__detail-row">${items.map(([k, v]) => `<li class="slds-page-header__detail-block"><div class="slds-text-title slds-truncate">${esc(k)}</div><div class="slds-truncate">${v}</div></li>`).join('')}</ul>`;
+function path(steps, currentIdx, lost) {
+  return `<div class="slds-path slds-m-bottom_small"><div class="slds-grid slds-path__track"><div class="slds-grid slds-path__scroller-container"><div class="slds-path__scroller"><div class="slds-path__scroller_inner"><ul class="slds-path__nav" role="listbox">${steps.map((s, i) => {
+    const cls = lost ? (i === currentIdx ? 'slds-is-lost slds-is-current slds-is-active' : 'slds-is-incomplete') : i < currentIdx ? 'slds-is-complete' : i === currentIdx ? 'slds-is-current slds-is-active' : 'slds-is-incomplete';
+    return `<li class="slds-path__item ${cls}" role="presentation"><a aria-selected="${i === currentIdx}" class="slds-path__link" role="option" tabindex="-1"><span class="slds-path__stage">${uIcon('check', 'slds-icon_x-small')}</span><span class="slds-path__title">${esc(s)}</span></a></li>`;
+  }).join('')}</ul></div></div></div></div></div>`;
+}
+function tabs(list, active, act) {
+  return `<div class="slds-tabs_default"><ul class="slds-tabs_default__nav" role="tablist">${list.map(([id, label]) => `<li class="slds-tabs_default__item ${id === active ? 'slds-is-active' : ''}" role="presentation"><a class="slds-tabs_default__link" role="tab" data-act="${act}" data-id="${id}">${label}</a></li>`).join('')}</ul></div>`;
+}
+function timeline(acts) {
+  if (!acts.length) return '<div class="bp-empty">No activity yet.</div>';
+  const ic = {call:'call', chat:'chat', email:'email', assign:'assignment', escalate:'warning', merge:'merge', status:'check', system:'settings', block:'ban', doc:'file', money:'moneybag'};
+  return `<ul class="bp-tl">${acts.map(a => `<li><span class="bp-tl-ico ico-${a.type}"><svg aria-hidden="true"><use href="#u-${ic[a.type] || 'info'}"></use></svg></span><div><div>${esc(a.text)}</div><div class="bp-muted">${esc(a.by)} · ${fmtDT(a.at)}</div></div></li>`).join('')}</ul>`;
+}
+function slaBadge(l) {
+  if (!['New'].includes(l.status) || !l.ownerId || !l.slaDueAt) return l.firstResponseAt ? `<span class="bp-sla done">Responded in ${fmtDur(l.firstResponseAt - (l.assignedAt || l.createdAt))}</span>` : '';
+  if (l.firstResponseAt) return `<span class="bp-sla done">Responded in ${fmtDur(l.firstResponseAt - l.assignedAt)}</span>`;
+  const left = l.slaDueAt - S.now;
+  const cls = left < 0 ? 'bad' : left < 5 * MIN ? 'soon' : 'ok';
+  return `<span class="bp-sla ${cls}" data-sla="${l.id}">${left < 0 ? 'SLA overdue ' + fmtDur(-left) : 'SLA ' + fmtDur(left) + ' left'}</span>`;
+}
+
+/* ---------- navigation ---------- */
+function go(view, id, tab) { S.view = view; S.recId = id || null; S.tab = tab || null; S.notifOpen = false; render(); window.scrollTo(0, 0); }
+function navItems() {
+  const role = me().role, items = [];
+  if (role === 'Agent') items.push(['home', 'My Day']);
+  items.push(['leads', 'Leads'], ['deals', 'Deals']);
+  if (S.cfg.features.optionB && role !== 'Agent') items.push(['campaigns', 'Campaigns']);
+  if (role !== 'Agent') items.push(['dashboard', 'Dashboards']);
+  if (role === 'Firm Admin') items.push(['setup', 'Setup']);
+  return items;
+}
+const viewGroup = v => ({lead:'leads', deal:'deals', campaign:'campaigns'}[v] || v);
+
+/* ---------- header ---------- */
+function headerHtml() {
+  const unread = S.notifications.filter(n => n.userId === S.persona && !n.read);
+  const mine = S.notifications.filter(n => n.userId === S.persona).slice(0, 15);
+  const lp = S.cfg.features.licencePath === 'OEM' ? 'OEM Embedded org' : 'Sales Cloud org';
+  return `<header class="bp-header">
+    <div class="bp-logo"><div class="bp-logo-mark">BP</div><div class="bp-logo-text"><b>Broker Portal</b><span>Crescent Key Realty · ${lp} · ${S.cfg.features.optionB ? 'Marketing + Lead Ops' : 'Lead Ops'}</span></div></div>
+    <div class="bp-header-right">
+      <div class="bp-clock" title="Demo clock (GST). Speed it up to watch SLA timers.">
+        ${uIcon('clock')}<span class="bp-muted">Demo time</span><span class="bp-time" id="clock">${fmtTime(S.now)}</span>
+        <button class="slds-button slds-button_icon slds-button_icon-x-small" data-act="togglePlay" title="${S.playing ? 'Pause' : 'Play'}">${bIconOnly(S.playing ? 'pause' : 'play')}</button>
+        <select data-act="speed" title="Speed">${[[1, '×1 real time'], [60, '×60 (1s = 1 min)'], [120, '×120 (1s = 2 min)'], [300, '×300 (1s = 5 min)']].map(([v, t]) => `<option value="${v}" ${S.speed === v ? 'selected' : ''}>${t}</option>`).join('')}</select>
+        <select data-act="jump" title="Jump to time"><option value="">Jump to…</option><option value="10:30">10:30</option><option value="17:55">17:55</option><option value="18:40">18:40 (after hours)</option><option value="next">Next day 09:05</option></select>
+      </div>
+      <div class="bp-bell">
+        <button class="slds-button slds-button_icon slds-button_icon-border-filled" data-act="toggleNotif" title="Notifications">${bIconOnly('notification')}</button>
+        ${unread.length ? `<span class="bp-bell-count">${unread.length}</span>` : ''}
+        ${S.notifOpen ? `<div class="bp-notif-pop slds-popover slds-popover_panel slds-nubbin_top-right" style="position:absolute"><div class="slds-popover__body slds-p-around_small"><div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small"><b>Notifications · ${esc(me().name)}</b><a class="bp-link bp-small" data-act="markRead">Mark all read</a></div>${mine.length ? mine.map(n => `<div class="slds-p-vertical_x-small" style="border-bottom:1px solid #f3f3f3"><a class="bp-link bp-small" data-act="openNotif" data-id="${n.id}">${n.read ? '' : '● '}${esc(n.text)}</a><div class="bp-muted" style="font-size:11px">${fmtDT(n.at)}</div></div>`).join('') : '<div class="bp-empty">Nothing yet.</div>'}</div></div>` : ''}
+      </div>
+      <div class="slds-select_container" style="min-width:230px"><select class="slds-select" data-act="persona" title="View as">${PERSONAS.map(p => `<option value="${p.id}" ${p.id === S.persona ? 'selected' : ''}>View as: ${esc(p.label)}</option>`).join('')}</select></div>
+      <button class="slds-button slds-button_neutral" data-act="reset" title="Reset all demo data">${bIcon('refresh')}Reset</button>
+    </div></header>
+    <div class="slds-context-bar"><div class="slds-context-bar__primary"><div class="slds-context-bar__item slds-no-hover"><span class="slds-context-bar__label-action slds-context-bar__app-name"><span class="slds-truncate">Broker Portal</span></span></div></div>
+      <nav class="slds-context-bar__secondary" role="navigation"><ul class="slds-grid">${navItems().map(([v, l]) => `<li class="slds-context-bar__item ${viewGroup(S.view) === v ? 'slds-is-active' : ''}"><a class="slds-context-bar__label-action" data-act="nav" data-id="${v}"><span class="slds-truncate">${l}</span></a></li>`).join('')}</ul></nav></div>`;
+}
+
+/* ---------- views: home ---------- */
+function viewHome() {
+  const my = S.leads.filter(l => l.ownerId === S.persona);
+  const newL = my.filter(l => l.status === 'New');
+  const due = newL.filter(l => !l.firstResponseAt);
+  const stale = my.filter(l => OPEN.includes(l.status) && S.now - (l.lastActivityAt || l.createdAt) > 48 * HOUR);
+  const myDeals = S.deals.filter(d => d.ownerId === S.persona && !d.lost && d.stageIdx < stagesOf(d.type).length - 1);
+  const stuck = myDeals.filter(d => stageOf(d).slaDays && S.now - d.stageEnteredAt > stageOf(d).slaDays * DAY);
+  const pri = [
+    ...due.map(l => ({rank:0, html:`<a class="bp-link" data-act="open" data-view="lead" data-id="${l.id}">${esc(l.name)}</a> — new ${esc(l.lob)} lead from ${esc(l.channel)} ${slaBadge(l)}`})),
+    ...stuck.map(d => ({rank:1, html:`<a class="bp-link" data-act="open" data-view="deal" data-id="${d.id}">${esc(d.name)}</a> — stuck in <b>${esc(stageOf(d).name)}</b> for ${fmtDur(S.now - d.stageEnteredAt)} (limit ${stageOf(d).slaDays}d) ${gateCheck(d).ok ? '' : badge('Gate blocked', 'slds-theme_error')}`})),
+    ...stale.map(l => ({rank:2, html:`<a class="bp-link" data-act="open" data-view="lead" data-id="${l.id}">${esc(l.name)}</a> — no activity for ${fmtDur(S.now - (l.lastActivityAt || l.createdAt))} ${statusBadge(l.status)}`})),
+  ];
+  const myPayments = [];
+  S.deals.filter(d => d.ownerId === S.persona && !d.lost).forEach(d => d.payments.forEach(p => { if (p.status !== 'Paid' && p.due - S.now < 21 * DAY) myPayments.push({d, p}); }));
+  return `<div class="bp-tiles slds-m-bottom_small">
+      <div class="bp-tile ${due.length ? 'bp-warn' : 'bp-good'}"><div class="bp-tile-label">Awaiting first response</div><div class="bp-tile-value">${due.length}</div><div class="bp-tile-sub">SLA ${S.cfg.sla.firstResponseMin} min</div></div>
+      <div class="bp-tile"><div class="bp-tile-label">My open leads</div><div class="bp-tile-value">${my.filter(l => OPEN.includes(l.status)).length}</div><div class="bp-tile-sub">${my.filter(l => l.status === 'Qualified').length} qualified</div></div>
+      <div class="bp-tile ${stale.length ? 'bp-bad' : 'bp-good'}"><div class="bp-tile-label">Untouched &gt; 48h</div><div class="bp-tile-value">${stale.length}</div><div class="bp-tile-sub">follow-ups overdue</div></div>
+      <div class="bp-tile ${stuck.length ? 'bp-bad' : ''}"><div class="bp-tile-label">My deals in progress</div><div class="bp-tile-value">${myDeals.length}</div><div class="bp-tile-sub">${stuck.length} stuck past stage limit</div></div>
+    </div>
+    <div class="bp-grid bp-cols-2">
+      <div>${card('Today’s priorities', pri.length ? `<ul class="slds-has-dividers_bottom-space">${pri.sort((a, b) => a.rank - b.rank).map(p => `<li class="slds-item bp-small">${p.html}</li>`).join('')}</ul>` : '<div class="bp-empty">All caught up.</div>', '', 'task')}
+      ${card('Upcoming payment milestones (next 21 days)', myPayments.length ? `<table class="slds-table slds-table_cell-buffer slds-table_bordered bp-small"><thead><tr><th>Deal</th><th>Milestone</th><th>Amount</th><th>Due</th><th>Status</th></tr></thead><tbody>${myPayments.map(({d, p}) => `<tr><td><a class="bp-link" data-act="open" data-view="deal" data-id="${d.id}" data-tab="payments">${esc(d.name)}</a></td><td>${esc(p.label)}</td><td>${fmtAED(p.amount)}</td><td>${fmtDate(p.due)}</td><td>${p.due < S.now ? badge('Overdue', 'slds-theme_error') : badge('Due soon', 'slds-theme_warning')}</td></tr>`).join('')}</tbody></table>` : '<div class="bp-empty">No milestones due.</div>', '', 'event')}</div>
+      <div>${card('My notifications', (() => { const n = S.notifications.filter(x => x.userId === S.persona).slice(0, 8); return n.length ? n.map(x => `<div class="slds-p-vertical_x-small bp-small" style="border-bottom:1px solid #f3f3f3"><a class="bp-link" data-act="openNotif" data-id="${x.id}">${esc(x.text)}</a><div class="bp-muted">${ago(x.at)}</div></div>`).join('') : '<div class="bp-empty">Nothing new.</div>'; })(), '', 'announcement')}
+      ${card('How my day is built', `<p class="bp-small bp-muted">Priorities are ranked automatically: SLA-bound new leads first, then deals stuck past their stage limit, then leads with no activity for 48 hours. Agents only see their own records (private sharing).</p>`, '', 'knowledge')}</div>
+    </div>`;
+}
+
+/* ---------- views: leads list ---------- */
+function viewLeads() {
+  const f = S.leadFilter;
+  let rows = visibleLeads();
+  if (f === 'mine') rows = rows.filter(l => l.ownerId === S.persona && OPEN.includes(l.status));
+  if (f === 'open') rows = rows.filter(l => OPEN.includes(l.status));
+  if (f === 'queue') rows = S.leads.filter(l => !l.ownerId);
+  if (f === 'breached') rows = rows.filter(l => l.breached && OPEN.includes(l.status));
+  const filters = [['mine', 'My open leads'], ...(canSeeAll() ? [['open', 'All open leads'], ['queue', 'Unassigned queue'], ['breached', 'SLA breached']] : []), ['all', canSeeAll() ? 'All leads' : 'All my leads']];
+  const simMenu = Object.entries(SIMS).map(([k, s]) => `<button class="slds-button slds-button_neutral slds-m-right_xx-small slds-m-bottom_xx-small" data-act="sim" data-id="${k}">${bIcon('download')}${esc(s.label)}</button>`).join('');
+  return pageHeader('lead', 'Leads', esc(filters.find(x => x[0] === f) ? filters.find(x => x[0] === f)[1] : 'Leads'),
+      `<button class="slds-button slds-button_neutral" data-act="newLead">${bIcon('add')}New lead</button><button class="slds-button slds-button_neutral" data-act="importCsv">${bIcon('upload')}Import CSV</button>`,
+      `<div class="slds-m-bottom_x-small">${filters.map(([id, l]) => `<button class="slds-button ${f === id ? 'slds-button_brand' : 'slds-button_neutral'} slds-m-right_xx-small" data-act="leadFilter" data-id="${id}">${l}</button>`).join('')}</div>
+       <div class="bp-small bp-muted slds-m-bottom_xx-small">Simulate inbound leads (stand-ins for portal, Meta and web integrations):</div>${simMenu}`)
+    + `<div class="slds-card bp-table-wrap"><table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped bp-small"><thead><tr class="slds-line-height_reset"><th>Name</th><th>Status</th><th>Source</th><th>Campaign</th><th>Line</th><th>Language</th><th>Owner</th><th>Created</th><th>SLA / last activity</th><th>Score</th></tr></thead><tbody>
+      ${rows.length ? rows.map(l => `<tr class="${S.highlight === l.id ? 'bp-highlight' : ''}"><td><a class="bp-link" data-act="open" data-view="lead" data-id="${l.id}">${esc(l.name)}</a>${l.attributions.length > 1 ? ' ' + badge('×' + l.attributions.length + ' enquiries') : ''}${l.dnc ? ' ' + badge('DNC', 'slds-theme_error') : ''}</td><td>${statusBadge(l.status)}</td><td>${esc(l.channel)}</td><td>${l.campaignId ? esc(campaignById(l.campaignId).name) : '<span class="bp-muted">—</span>'}</td><td>${esc(l.lob)}</td><td>${esc(l.lang)}</td><td>${l.ownerId ? esc(userName(l.ownerId)) : badge('Queue', 'slds-theme_warning')}</td><td>${fmtDate(l.createdAt)}</td><td>${l.status === 'New' && l.ownerId ? slaBadge(l) : '<span class="bp-muted">' + ago(l.lastActivityAt || l.createdAt) + '</span>'}</td><td>${leadScore(l)}</td></tr>`).join('') : `<tr><td colspan="10"><div class="bp-empty">No leads in this view.</div></td></tr>`}
+    </tbody></table></div>`;
+}
+
+/* ---------- views: lead record ---------- */
+function viewLead() {
+  const l = leadById(S.recId);
+  if (!l) return '<div class="bp-empty">Lead not found.</div>';
+  if (isAgent() && l.ownerId !== S.persona) return card('No access', `<div class="bp-empty">This lead is owned by ${esc(userName(l.ownerId))}. Agents only see their own records (OWD Private). Switch to the Team Leader to view it.</div>`);
+  const camp = l.campaignId ? campaignById(l.campaignId) : null;
+  const closed = ['Converted', 'Lost'].includes(l.status);
+  const pIdx = l.status === 'Lost' ? Math.max(0, LEAD_PATH.indexOf('Contacted')) : l.status === 'Nurture' ? 2 : LEAD_PATH.indexOf(l.status);
+  const q = l.qual;
+  const qSel = (key, label, opts) => fSelect('q-' + key, label, ['', ...opts], q[key], true, `data-bind="qual" data-key="${key}" ${closed ? 'disabled' : ''}`);
+  const actions = `<div class="slds-button-group" role="group">
+      <button class="slds-button slds-button_neutral" data-act="call" ${closed ? 'disabled' : ''}>${bIcon('call')}Call</button>
+      <button class="slds-button slds-button_neutral" data-act="message" ${closed ? 'disabled' : ''}>${bIcon('chat')}WhatsApp / email</button>
+      <button class="slds-button slds-button_neutral" data-act="nurture" ${closed || l.status === 'Nurture' ? 'disabled' : ''}>Nurture</button>
+      <button class="slds-button slds-button_neutral" data-act="markLost" ${closed ? 'disabled' : ''}>Mark lost</button>
+      <button class="slds-button slds-button_brand" data-act="convert" ${l.status !== 'Qualified' ? 'disabled title="Qualify the lead first"' : ''}>Convert to deal</button>
+    </div>${canSeeAll() && !closed ? ` <button class="slds-button slds-button_outline-brand" data-act="reassign">${bIcon('change_owner')}Re-assign</button>` : ''}`;
+  const deal = S.deals.find(d => d.leadId === l.id);
+  return pageHeader('lead', 'Lead · ' + l.id, esc(l.name) + ' ' + statusBadge(l.status) + (l.dnc ? ' ' + badge('Do Not Call', 'slds-theme_error') : ''), actions,
+      detailsRow([['Owner', l.ownerId ? esc(userName(l.ownerId)) : badge('Unassigned queue', 'slds-theme_warning')], ['Source', esc(l.channel)], ['Line of business', esc(l.lob)], ['Language', esc(l.lang)],
+        ['Budget', l.budget ? fmtAED(l.budget) : '—'], ['First response', slaBadge(l) || '—'], ['Lead score', `<b>${leadScore(l)}</b> <span class="bp-muted">(rules now, AI later)</span>`]]))
+    + path(LEAD_PATH, pIdx === -1 ? 0 : pIdx, l.status === 'Lost')
+    + (l.status === 'Lost' ? `<div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small"><h2>Lost – ${esc(l.lostReason)}</h2></div>` : '')
+    + (deal ? `<div class="slds-notify slds-notify_alert slds-alert_offline slds-m-bottom_small" style="background:#2e844a"><h2>Converted to deal <a class="bp-link" style="color:#fff;text-decoration:underline" data-act="open" data-view="deal" data-id="${deal.id}">${esc(deal.name)}</a> · Contact ${esc(deal.contactId)} + Individual Account ${esc(deal.accountId)}</h2></div>` : '')
+    + `<div class="bp-grid bp-cols-2"><div>
+      ${card('Qualification', `<div class="slds-grid slds-wrap slds-gutters_x-small">
+          <div class="slds-col slds-size_1-of-2">${qSel('finance', 'Finance', ['Cash', 'Mortgage – pre-approved', 'Mortgage – not yet'])}</div>
+          <div class="slds-col slds-size_1-of-2">${fInput('q-budget', 'Budget (AED)', l.budget || '', 'number', true, `data-bind="budget" ${closed ? 'disabled' : ''}`)}</div>
+          <div class="slds-col slds-size_1-of-2">${fInput('q-area', 'Area / project', q.area, 'text', true, `data-bind="qual" data-key="area" ${closed ? 'disabled' : ''}`)}</div>
+          <div class="slds-col slds-size_1-of-2">${qSel('unitType', 'Unit type', ['Studio', '1BR', '2BR', '3BR', '4BR+', 'Villa', 'Townhouse', 'Office', 'Retail'])}</div>
+          <div class="slds-col slds-size_1-of-2">${qSel('residency', 'Residency', ['Resident', 'Non-resident'])}</div>
+          <div class="slds-col slds-size_1-of-2">${qSel('purpose', 'Purpose', ['Live', 'Invest', 'Rent out'])}</div>
+          <div class="slds-col slds-size_1-of-2">${qSel('timeline', 'Timeline', ['0–3 months', '3–6 months', '6–12 months', '12+ months'])}</div>
+          <div class="slds-col slds-size_1-of-2">${qSel('otherBroker', 'Another broker involved?', ['No', 'Yes'])}</div>
+        </div>`, closed ? '' : `<button class="slds-button slds-button_brand" data-act="qualify" ${l.status === 'Qualified' ? 'disabled' : ''}>${l.status === 'Qualified' ? 'Qualified' : 'Mark as qualified'}</button>`, 'contact')}
+      ${card('Activity timeline', timeline(l.activities), '', 'log_a_call')}
+    </div><div>
+      ${card('Campaign attribution', l.attributions.map((a, i) => `<div class="slds-p-vertical_x-small bp-small" style="border-bottom:1px solid #f3f3f3"><b>${i === 0 ? 'Original source' : 'Repeat enquiry ' + i}</b> · ${fmtDT(a.at)}<br>${esc(a.channel)}${a.campaignId ? ` · <a class="bp-link" data-act="open" data-view="campaign" data-id="${a.campaignId}">${esc(campaignById(a.campaignId).name)}</a>` : ''}${a.creative ? `<br><span class="bp-muted">Creative: ${esc(a.creative)}</span>` : ''}</div>`).join('') + `<p class="bp-small bp-muted slds-m-top_x-small">The original campaign stays linked through to commission received.</p>`, '', 'campaign')}
+      ${card('Routing decision', l.routingTrace.length ? traceTable(l.routingTrace) : '<div class="bp-empty">Seed record – routed before the demo started.</div>', '', 'assignment')}
+      ${card('Compliance', `<dl class="bp-kv"><dt>DNC registry</dt><dd>${l.dnc ? badge('Listed – calls blocked', 'slds-theme_error') : badge('Not listed', 'slds-theme_success')}</dd><dt>Consent</dt><dd>${l.consent ? 'Recorded at capture (' + esc(l.channel) + ')' : badge('Missing', 'slds-theme_warning')}</dd><dt>Call window</dt><dd>${pad(S.cfg.callWindow.start)}:00–${pad(S.cfg.callWindow.end)}:00 GST · now ${fmtTime(S.now)} ${callBlocks({}).length ? badge('Closed', 'slds-theme_error') : badge('Open', 'slds-theme_success')}</dd><dt>Refused today</dt><dd>${l.refusalDate && sameDay(l.refusalDate, S.now) ? badge('Yes – no repeat call today', 'slds-theme_warning') : 'No'}</dd></dl>`, '', 'disclosure_and_compliance')}
+      ${card('Contact', `<dl class="bp-kv"><dt>Phone</dt><dd>${esc(l.phone)} <span class="bp-muted">(${esc(l.phoneN)})</span></dd><dt>Email</dt><dd>${esc(l.email) || '—'}</dd><dt>Project</dt><dd>${esc(l.project) || '—'}</dd><dt>Created</dt><dd>${fmtDT(l.createdAt)}</dd></dl>`, '', 'contact')}
+    </div></div>`;
+}
+function traceTable(trace) {
+  return trace.map(t => `<div class="slds-m-bottom_x-small"><div class="bp-small"><b>${esc(t.rule)}</b> — ${esc(t.note)}</div>${t.rows && t.rows.length ? `<table class="slds-table slds-table_bordered bp-trace slds-m-top_xx-small"><tbody>${t.rows.map(r => `<tr><td>${esc(r.agent)}</td><td class="${r.ok ? 'bp-pass' : 'bp-fail'}">${r.ok ? '✓' : '✗'}</td><td class="bp-muted">${esc(r.why)}</td></tr>`).join('')}</tbody></table>` : ''}</div>`).join('');
+}
+
+/* ---------- views: deals board ---------- */
+function viewDeals() {
+  const t = S.dealType;
+  const typeTabs = tabs([['Off-plan', 'Off-plan'], ['Secondary', 'Secondary sale'], ['Rental', 'Rental (Phase 5)'], ['Commercial', 'Commercial (Phase 5)']], t, 'dealType');
+  if (!S.cfg.stages[t]) return pageHeader('opportunity', 'Deals', 'Pipeline board') + `<div class="slds-card slds-p-around_medium">${typeTabs}<div class="bp-empty">${esc(t)} pipelines arrive in Phase 5 (rentals, renewals, vacant inventory mandates, commercial).</div></div>`;
+  const deals = visibleDeals().filter(d => d.type === t && !d.lost);
+  const st = stagesOf(t);
+  const cols = st.map((s, i) => ({s, i})).filter(x => x.s.active);
+  const total = deals.filter(d => d.stageIdx < st.length - 1).reduce((a, d) => a + d.price, 0);
+  return pageHeader('opportunity', 'Deals', 'Pipeline board', '', detailsRow([['Open deals', String(deals.filter(d => d.stageIdx < st.length - 1).length)], ['Open value', fmtAED(total)], ['Visibility', isAgent() ? 'My deals only' : 'All team deals'], ['How to use', 'Drag a card to the next stage. Gates check documents, KYC and commission rules.']]))
+    + `<div class="slds-card slds-p-around_small">${typeTabs}<div class="bp-kanban slds-m-top_small">${cols.map(({s, i}) => {
+      const inCol = deals.filter(d => d.stageIdx === i);
+      return `<div class="bp-col" data-drop="${i}"><div class="bp-col-head"><span>${esc(s.name)}</span><small>${inCol.length}${s.slaDays ? ' · ' + s.slaDays + 'd' : ''}</small></div>${inCol.map(d => {
+        const stuck = s.slaDays && S.now - d.stageEnteredAt > s.slaDays * DAY;
+        const g = gateCheck(d);
+        return `<div class="bp-card ${stuck ? 'bp-stuck' : ''} ${S.highlight === d.id ? 'bp-highlight' : ''}" draggable="true" data-drag="${d.id}" data-act="open" data-view="deal" data-id="${d.id}"><b>${esc(d.name)}</b>${fmtAED(d.price)}<div class="bp-muted">${esc(userName(d.ownerId))} · ${fmtDur(S.now - d.stageEnteredAt)} in stage</div><div class="slds-m-top_xx-small">${stuck ? badge('Stuck', 'slds-theme_error') + ' ' : ''}${!g.ok && i < st.length - 1 ? badge('Gate: ' + (g.problems[0].startsWith('Missing') ? 'docs' : g.problems[0].startsWith('KYC') ? 'KYC' : 'rule'), 'slds-theme_warning') : ''}${d.coBroker ? ' ' + badge('Co-broke') : ''}</div></div>`;
+      }).join('')}</div>`;
+    }).join('')}</div></div>`;
+}
+
+/* ---------- views: deal record ---------- */
+function viewDeal() {
+  const d = dealById(S.recId);
+  if (!d) return '<div class="bp-empty">Deal not found.</div>';
+  if (isAgent() && d.ownerId !== S.persona) return card('No access', '<div class="bp-empty">Agents only see their own deals.</div>');
+  const st = stagesOf(d.type);
+  const act = st.map((s, i) => ({s, i})).filter(x => x.s.active);
+  const cur = act.findIndex(x => x.i === d.stageIdx);
+  const g = gateCheck(d);
+  const cc = commissionCalc(d);
+  const camp = d.campaignId ? campaignById(d.campaignId) : null;
+  const tab = S.tab || 'gate';
+  const stage = stageOf(d);
+  const stuck = stage.slaDays && S.now - d.stageEnteredAt > stage.slaDays * DAY;
+  const header = pageHeader('opportunity', `Deal · ${d.type} · ${d.id}`, esc(d.name) + (d.lost ? ' ' + badge('Lost', 'slds-theme_error') : ''),
+    d.lost ? '' : `<button class="slds-button slds-button_neutral" data-act="dealLost">Mark lost</button><button class="slds-button slds-button_brand" data-act="advance" ${g.next < 0 ? 'disabled' : ''}>${bIcon('forward')}${g.next < 0 ? 'Closed' : 'Advance to ' + esc(st[g.next].name)}</button>`,
+    detailsRow([['Client', esc(d.clientName)], ['Owner', esc(userName(d.ownerId))], ['Property', esc(d.project) + (d.unit ? ' · ' + esc(d.unit) : '')], ['Price', fmtAED(d.price)],
+      ['Stage', esc(stage.name) + ' ' + (stuck ? badge('Stuck ' + fmtDur(S.now - d.stageEnteredAt), 'slds-theme_error') : `<span class="bp-muted">${fmtDur(S.now - d.stageEnteredAt)}${stage.slaDays ? ' / ' + stage.slaDays + 'd limit' : ''}</span>`)],
+      ['Campaign', camp ? `<a class="bp-link" data-act="open" data-view="campaign" data-id="${camp.id}">${esc(camp.name)}</a>` : esc(d.channel)], ['Commission', fmtAED(cc.gross) + ' · ' + COMMISSION_FLOW[d.commission.status]]]));
+  const gateBox = g.next < 0 ? '' : `<div class="slds-notify slds-notify_alert ${g.ok ? '' : 'slds-alert_warning'} slds-m-bottom_small" style="${g.ok ? 'background:#2e844a' : ''}"><h2>${g.ok ? `Ready to advance to “${esc(st[g.next].name)}”` : 'Gate to leave “' + esc(stage.name) + '”: ' + g.problems.map(esc).join(' · ')}</h2></div>`;
+  let body = '';
+  if (tab === 'gate') body = dealDocsTab(d);
+  if (tab === 'payments') body = dealPaymentsTab(d);
+  if (tab === 'handover') body = dealHandoverTab(d);
+  if (tab === 'commission') body = dealCommissionTab(d, cc);
+  if (tab === 'activity') body = timeline(d.activities);
+  return header + path(act.map(x => x.s.name), cur, !!d.lost) + gateBox
+    + `<div class="slds-card slds-p-around_small">${tabs([['gate', 'Documents &amp; KYC'], ['payments', 'Payment plan'], ['handover', 'Handover checklist'], ['commission', 'Commission'], ['activity', 'Activity']], tab, 'dealTab')}<div class="slds-p-top_small">${body}</div></div>`;
+}
+function dealDocsTab(d) {
+  const st = stagesOf(d.type);
+  const rows = st.map((s, i) => ({s, i})).filter(x => x.s.docs.length);
+  const k = d.kyc;
+  return `<div class="bp-grid bp-cols-2"><div><div class="bp-table-wrap"><table class="slds-table slds-table_cell-buffer slds-table_bordered bp-small"><thead><tr><th>Stage</th><th>Document</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(({s, i}) => s.docs.map((doc, j) => {
+      const f = d.docs[doc];
+      return `<tr class="${i === d.stageIdx ? 'slds-is-selected' : ''}">${j === 0 ? `<td rowspan="${s.docs.length}">${esc(s.name)}${i === d.stageIdx ? ' ' + badge('Current') : ''}${!s.active ? ' ' + badge('Skipped') : ''}</td>` : ''}<td>${esc(doc)}</td><td>${f ? `${badge('Uploaded', 'slds-theme_success')} <span class="bp-muted">${esc(f.file)} · ${esc(f.by)} · ${fmtDate(f.at)}</span>` : badge('Missing', i <= d.stageIdx ? 'slds-theme_error' : '')}</td><td>${f || d.lost ? '' : `<button class="slds-button slds-button_neutral slds-button_small" data-act="uploadDoc" data-doc="${esc(doc)}">${bIcon('upload')}Upload</button>`}</td></tr>`;
+    }).join('')).join('')}</tbody></table></div>
+    <p class="bp-small bp-muted slds-m-top_x-small">Required documents per stage come from the firm's pipeline configuration (Setup → Pipelines). Upload picks a real file from your computer; it stays in this browser only.</p></div>
+    <div>${card('KYC / AML', `${KYC_DOCS.map(doc => `<div class="slds-form-element"><div class="slds-form-element__control"><div class="slds-checkbox"><input type="checkbox" id="kyc-${esc(doc)}" ${k.docs[doc] ? 'checked' : ''} data-act="kycDoc" data-doc="${esc(doc)}"><label class="slds-checkbox__label" for="kyc-${esc(doc)}"><span class="slds-checkbox_faux"></span><span class="slds-form-element__label">${esc(doc)}</span></label></div></div></div>`).join('')}
+      ${fSelect('kyc-screen', 'Sanctions screening', ['Pending', 'Clear', 'Potential match – review'], k.screening, true, 'data-act="kycField" data-key="screening"')}
+      ${fSelect('kyc-risk', 'Risk rating', ['', 'Low', 'Medium', 'High'], k.risk, true, 'data-act="kycField" data-key="risk"')}
+      <div class="slds-form-element"><div class="slds-checkbox"><input type="checkbox" id="kyc-cash" ${k.cash55k ? 'checked' : ''} data-act="kycCash"><label class="slds-checkbox__label" for="kyc-cash"><span class="slds-checkbox_faux"></span><span class="slds-form-element__label">Cash ≥ AED 55,000 or virtual-asset funding</span></label></div></div>
+      ${k.cash55k ? `<div class="slds-notify slds-notify_alert slds-alert_warning slds-m-top_x-small"><h2>REAR report required – goAML task created for the AML officer</h2></div>` : ''}
+      <div class="slds-m-top_small">${kycComplete(d) ? badge('KYC complete', 'slds-theme_success') : badge('KYC incomplete', 'slds-theme_warning')}</div>`, '', 'disclosure_and_compliance')}</div></div>`;
+}
+function dealPaymentsTab(d) {
+  const proj = projectByName(d.project);
+  const pp = paidPct(d);
+  return `<div class="slds-m-bottom_small bp-small">Paid to ${d.type === 'Off-plan' ? 'developer escrow' : 'seller / trustee'}: <b>${pp}%</b> of ${fmtAED(d.price)}${proj && proj.threshold && d.type === 'Off-plan' ? ` · developer commission threshold <b>${proj.threshold}%</b> ${pp >= proj.threshold ? badge('Reached', 'slds-theme_success') : badge('Not reached', 'slds-theme_warning')}` : ''}</div>
+    <div class="bp-bar-track slds-m-bottom_medium" style="height:16px"><div class="bp-bar bp-alt" style="width:${pp}%;height:16px"></div>${proj && proj.threshold && d.type === 'Off-plan' ? `<div class="bp-threshold" style="left:${proj.threshold}%" title="Commission threshold"></div>` : ''}</div>
+    <table class="slds-table slds-table_cell-buffer slds-table_bordered bp-small"><thead><tr><th>Milestone</th><th>%</th><th>Amount</th><th>Due</th><th>Status</th><th></th></tr></thead><tbody>${d.payments.map((p, i) => {
+      const overdue = p.status !== 'Paid' && p.due < S.now;
+      return `<tr><td>${esc(p.label)}</td><td>${p.pct}%</td><td>${fmtAED(p.amount)}</td><td>${fmtDate(p.due)}</td><td>${p.status === 'Paid' ? badge('Paid ' + fmtDate(p.paidAt), 'slds-theme_success') : overdue ? badge('Overdue – reminder sent', 'slds-theme_error') : p.due - S.now < 14 * DAY ? badge('Due soon', 'slds-theme_warning') : badge('Upcoming')}</td><td>${p.status !== 'Paid' && !d.lost ? `<button class="slds-button slds-button_neutral slds-button_small" data-act="markPaid" data-idx="${i}">Record as paid</button>` : ''}</td></tr>`;
+    }).join('')}</tbody></table>
+    <p class="bp-small bp-muted slds-m-top_x-small">The platform tracks milestones and sends reminders. Client money always goes to the developer's escrow account, never through the platform (D12).</p>`;
+}
+function dealHandoverTab(d) {
+  const allPass = d.handover.every(h => h.result === 'Pass');
+  const anyFail = d.handover.some(h => h.result === 'Fail');
+  return `<div class="slds-m-bottom_small">${allPass ? badge('Ready for handover', 'slds-theme_success') : anyFail ? badge('Handover blocked – a check failed', 'slds-theme_error') : badge('Checks pending', 'slds-theme_warning')}</div>
+    <table class="slds-table slds-table_cell-buffer slds-table_bordered bp-small"><thead><tr><th>Check</th><th>Result</th><th>Evidence</th><th>Done by</th><th>When</th></tr></thead><tbody>${d.handover.map((h, i) => `<tr><td>${esc(h.check)}</td><td style="min-width:140px"><div class="slds-select_container"><select class="slds-select" data-act="handoverResult" data-idx="${i}" ${d.lost ? 'disabled' : ''}>${['Pending', 'Pass', 'Fail'].map(o => `<option ${h.result === o ? 'selected' : ''}>${o}</option>`).join('')}</select></div></td><td><input class="slds-input" placeholder="Reference or file name" value="${esc(h.evidence)}" data-act="handoverEvidence" data-idx="${i}" ${d.lost ? 'disabled' : ''}></td><td>${esc(h.by) || '—'}</td><td>${fmtDT(h.at)}</td></tr>`).join('')}</tbody></table>
+    <p class="bp-small bp-muted slds-m-top_x-small">Results are entered manually. Automated credit checks wait for AECB access and consent rules (open item D16: what “ACV check” means).</p>`;
+}
+function dealCommissionTab(d, cc) {
+  const s = d.commission.status;
+  const trig = commissionTriggerIdx(d.type);
+  const canClaim = d.stageIdx >= trig;
+  const ageing = d.commission.claimedAt && s < 3 ? S.now - d.commission.claimedAt : 0;
+  const line = (k, v, strong) => `<tr><td>${k}</td><td class="slds-text-align_right">${strong ? '<b>' + v + '</b>' : v}</td></tr>`;
+  return `${path(COMMISSION_FLOW, s, false)}
+    <div class="bp-grid bp-cols-2"><div>${card('Calculation', `<table class="slds-table slds-table_bordered bp-small"><tbody>
+      ${line('Property price', fmtAED(d.price))}
+      ${line(`Commission rate (${esc(cc.payer)} pays)`, cc.rate + '%' + (cc.rateId ? '' : ' <span class="bp-fail">no rate configured</span>'))}
+      ${line('Gross commission', fmtAED(cc.gross), true)}
+      ${line(`VAT ${S.cfg.vat}% (on invoice)`, fmtAED(cc.vat))}
+      ${line('Invoice total', fmtAED(cc.invoice))}
+      ${d.coBroker ? line(`Co-broker share – ${esc(d.coBroker.firm)} (${d.coBroker.split}%)`, '− ' + fmtAED(cc.coBroker)) : ''}
+      ${line('Firm net commission', fmtAED(cc.firmNet), true)}
+      ${line(`Agent – ${esc(userName(d.ownerId))} (${S.cfg.splits.agent}%)`, fmtAED(cc.agent))}
+      ${line(`Team leader (${S.cfg.splits.teamLeader}%)`, fmtAED(cc.tl))}
+      ${cc.referral ? line(`Referral (${S.cfg.splits.referral}%)`, fmtAED(cc.referral)) : ''}
+      ${line('Retained by firm', fmtAED(cc.retained), true)}
+    </tbody></table><p class="bp-small bp-muted slds-m-top_x-small">Rates and splits are configurable per developer, project and deal type (Setup → Commission).</p>`, '', 'currency')}</div>
+    <div>${card('Collections', `<dl class="bp-kv"><dt>Status</dt><dd>${badge(COMMISSION_FLOW[s], s >= 3 ? 'slds-theme_success' : '')}</dd><dt>Earned when</dt><dd>Deal reaches “${esc(stagesOf(d.type)[trig].name)}”${canClaim ? ' ✓' : ''}</dd><dt>Claimed</dt><dd>${fmtDate(d.commission.claimedAt)}</dd><dt>Invoice</dt><dd>${esc(d.commission.invoiceNo) || '—'}</dd><dt>Received</dt><dd>${fmtDate(d.commission.receivedAt)}</dd><dt>Paid to agent</dt><dd>${fmtDate(d.commission.paidAt)}</dd>${ageing ? `<dt>Ageing</dt><dd>${ageing > 30 * DAY ? badge(fmtDur(ageing) + ' – overdue from developer', 'slds-theme_error') : fmtDur(ageing)}</dd>` : ''}</dl>
+      ${s < 4 && !d.lost ? `<button class="slds-button slds-button_brand slds-m-top_small" data-act="commNext" ${s === 0 && !canClaim ? 'disabled' : ''}>Move to “${COMMISSION_FLOW[s + 1]}”</button>${s === 0 && !canClaim ? `<p class="bp-small bp-muted slds-m-top_x-small">Can be claimed once the deal reaches “${esc(stagesOf(d.type)[trig].name)}”.</p>` : ''}` : ''}`, '', 'budget')}
+    ${card('Attribution', `<p class="bp-small">${d.campaignId ? `Campaign <a class="bp-link" data-act="open" data-view="campaign" data-id="${d.campaignId}">${esc(campaignById(d.campaignId).name)}</a> via ${esc(d.channel)}. When this commission is received it counts toward the campaign's ROI.` : 'No campaign – organic source: ' + esc(d.channel)}</p>`, '', 'campaign')}</div></div>`;
+}
+
+/* ---------- views: campaigns ---------- */
+function campaignStats(c) {
+  const leads = S.leads.filter(l => l.attributions.some(a => a.campaignId === c.id));
+  const orig = S.leads.filter(l => l.campaignId === c.id);
+  const qualified = orig.filter(l => ['Qualified', 'Converted'].includes(l.status));
+  const deals = S.deals.filter(d => d.campaignId === c.id && !d.lost);
+  const received = deals.filter(d => d.commission.status >= 3).reduce((a, d) => a + commissionCalc(d).gross, 0);
+  const spend = Object.values(c.spend).reduce((a, b) => a + b, 0);
+  const viewings = orig.filter(l => ['Contacted', 'Qualified', 'Converted'].includes(l.status)).length;
+  return {leads:orig.length, touches:leads.length, qualified:qualified.length, deals:deals.length, received, spend, viewings,
+    cpl:orig.length ? spend / orig.length : 0, cpq:qualified.length ? spend / qualified.length : 0, cpd:deals.length ? spend / deals.length : 0, roi:spend ? received / spend : 0};
+}
+const permitState = c => !c.permit ? {label:'No permit', theme:'slds-theme_error', ok:false} : c.permit.expiry < S.now ? {label:'Permit expired', theme:'slds-theme_error', ok:false} : c.permit.expiry - S.now < 7 * DAY ? {label:'Expires in ' + fmtDur(c.permit.expiry - S.now), theme:'slds-theme_warning', ok:true} : {label:'Valid to ' + fmtDate(c.permit.expiry), theme:'slds-theme_success', ok:true};
+function viewCampaigns() {
+  if (!S.cfg.features.optionB) return card('Campaigns', '<div class="bp-empty">Campaign management is part of Option B (Marketing + Lead Operations). Turn it on in Setup → Packages.</div>');
+  const alerts = S.campaigns.filter(c => c.status === 'Active' && (!permitState(c).ok || c.permit.expiry - S.now < 7 * DAY));
+  return pageHeader('campaign', 'Campaigns', 'Marketing campaigns', `<button class="slds-button slds-button_neutral" data-act="newCampaign">${bIcon('add')}New campaign</button>`)
+    + alerts.map(c => `<div class="slds-notify slds-notify_alert slds-alert_warning slds-m-bottom_x-small"><h2>Ad permit alert: “${esc(c.name)}” – ${esc(permitState(c).label)}. Renew it or the campaign will be paused automatically.</h2></div>`).join('')
+    + `<div class="slds-card bp-table-wrap"><table class="slds-table slds-table_cell-buffer slds-table_bordered bp-small"><thead><tr><th>Campaign</th><th>Status</th><th>Ad permit</th><th>Line</th><th>Spend</th><th>Leads</th><th>Cost / lead</th><th>Qualified</th><th>Deals</th><th>Commission received</th><th>ROI</th></tr></thead><tbody>${S.campaigns.map(c => {
+      const s = campaignStats(c), p = permitState(c);
+      return `<tr><td><a class="bp-link" data-act="open" data-view="campaign" data-id="${c.id}">${esc(c.name)}</a></td><td>${badge(c.status, c.status === 'Active' ? 'slds-theme_success' : '')}</td><td>${badge(p.label, p.theme)}</td><td>${esc(c.lob)}</td><td>${fmtAED(s.spend)}</td><td>${s.leads}</td><td>${s.leads ? fmtAED(s.cpl) : '—'}</td><td>${s.qualified}</td><td>${s.deals}</td><td>${fmtAED(s.received)}</td><td>${s.spend ? '<b>' + s.roi.toFixed(1) + '×</b>' : '—'}</td></tr>`;
+    }).join('')}</tbody></table></div>`;
+}
+function viewCampaign() {
+  const c = campaignById(S.recId);
+  if (!c) return '<div class="bp-empty">Campaign not found.</div>';
+  const s = campaignStats(c), p = permitState(c);
+  const chRows = c.channels.map(ch => {
+    const leads = S.leads.filter(l => l.campaignId === c.id && l.channel === ch);
+    const q = leads.filter(l => ['Qualified', 'Converted'].includes(l.status)).length;
+    const deals = S.deals.filter(d => d.campaignId === c.id && d.channel === ch);
+    const rec = deals.filter(d => d.commission.status >= 3).reduce((a, d) => a + commissionCalc(d).gross, 0);
+    const sp = c.spend[ch] || 0;
+    return {ch, leads:leads.length, q, deals:deals.length, rec, sp};
+  });
+  const maxL = Math.max(1, ...chRows.map(r => r.leads));
+  const crRows = c.creatives.map(cr => ({cr, leads:S.leads.filter(l => l.campaignId === c.id && l.creative === cr).length, deals:S.deals.filter(d => d.campaignId === c.id && leadById(d.leadId) && leadById(d.leadId).creative === cr).length}));
+  return pageHeader('campaign', 'Campaign · ' + c.id, esc(c.name) + ' ' + badge(c.status, c.status === 'Active' ? 'slds-theme_success' : ''),
+      c.status === 'Active' ? `<button class="slds-button slds-button_neutral" data-act="pauseCampaign">${bIcon('pause')}Pause</button>` : `<button class="slds-button slds-button_brand" data-act="activateCampaign">${bIcon('play')}Activate</button>`,
+      detailsRow([['Objective', esc(c.lob) + ' · ' + esc(c.project)], ['Emirate', esc(c.emirate)], ['Budget', fmtAED(c.budget)], ['Spend', fmtAED(s.spend) + ` (${c.budget ? Math.round(s.spend / c.budget * 100) : 0}%)`], ['Targets', `${c.targetLeads} leads · ${c.targetDeals} deals`], ['Ad permit', badge(p.label, p.theme)]]))
+    + `<div class="bp-tiles slds-m-bottom_small">
+      <div class="bp-tile"><div class="bp-tile-label">Leads</div><div class="bp-tile-value">${s.leads}</div><div class="bp-tile-sub">of ${c.targetLeads || '—'} target${s.touches - s.leads > 0 ? ' · +' + (s.touches - s.leads) + ' repeat enquiries' : ''}</div></div>
+      <div class="bp-tile"><div class="bp-tile-label">Cost per lead</div><div class="bp-tile-value">${s.leads ? fmtAED(s.cpl) : '—'}</div></div>
+      <div class="bp-tile"><div class="bp-tile-label">Cost per qualified lead</div><div class="bp-tile-value">${s.qualified ? fmtAED(s.cpq) : '—'}</div><div class="bp-tile-sub">${s.qualified} qualified</div></div>
+      <div class="bp-tile"><div class="bp-tile-label">Cost per deal</div><div class="bp-tile-value">${s.deals ? fmtAED(s.cpd) : '—'}</div><div class="bp-tile-sub">${s.deals} deals</div></div>
+      <div class="bp-tile bp-good"><div class="bp-tile-label">Commission received</div><div class="bp-tile-value">${fmtAED(s.received)}</div></div>
+      <div class="bp-tile ${s.roi >= 1 ? 'bp-good' : 'bp-warn'}"><div class="bp-tile-label">ROI (commission ÷ spend)</div><div class="bp-tile-value">${s.spend ? s.roi.toFixed(1) + '×' : '—'}</div></div>
+    </div>
+    <div class="bp-grid bp-cols-2"><div>
+      ${card('Performance by channel', `<table class="slds-table slds-table_cell-buffer slds-table_bordered bp-small"><thead><tr><th>Channel</th><th>Spend</th><th>Leads</th><th></th><th>Cost/lead</th><th>Qualified</th><th>Deals</th><th>Commission</th><th></th></tr></thead><tbody>${chRows.map(r => `<tr><td>${esc(r.ch)}${c.paused.includes(r.ch) ? ' ' + badge('Paused') : ''}</td><td>${fmtAED(r.sp)}</td><td>${r.leads}</td><td style="width:120px"><div class="bp-bar-track"><div class="bp-bar" style="width:${r.leads / maxL * 100}%"></div></div></td><td>${r.leads ? fmtAED(r.sp / r.leads) : '—'}</td><td>${r.q}</td><td>${r.deals}</td><td>${fmtAED(r.rec)}</td><td><button class="slds-button slds-button_neutral slds-button_small" data-act="toggleChannel" data-ch="${esc(r.ch)}">${c.paused.includes(r.ch) ? 'Resume' : 'Pause'}</button></td></tr>`).join('')}</tbody></table>`, '', 'metrics')}
+      ${card('Performance by creative', `<table class="slds-table slds-table_cell-buffer slds-table_bordered bp-small"><thead><tr><th>Creative</th><th>Leads</th><th>Deals</th></tr></thead><tbody>${crRows.map(r => `<tr><td>${esc(r.cr)}</td><td>${r.leads}</td><td>${r.deals}</td></tr>`).join('')}</tbody></table>`, '', 'feed')}
+    </div><div>
+      ${card('Compliance – ad permit', c.permit ? `<dl class="bp-kv"><dt>Permit no.</dt><dd>Trakheesi ${esc(c.permit.no)}</dd><dt>Expiry</dt><dd>${fmtDate(c.permit.expiry)} ${badge(p.label, p.theme)}</dd><dt>Emirate</dt><dd>${esc(c.emirate)} rule pack</dd></dl><button class="slds-button slds-button_neutral slds-m-top_small" data-act="addPermit">Renew / replace permit</button>` : `<div class="slds-notify slds-notify_alert slds-alert_error"><h2>No ad permit – this campaign can’t go live.</h2></div><button class="slds-button slds-button_brand slds-m-top_small" data-act="addPermit">${bIcon('add')}Add permit</button>`, '', 'disclosure_and_compliance')}
+      ${card('Funnel', [['Leads', s.leads], ['Contacted+', s.viewings], ['Qualified', s.qualified], ['Deals', s.deals]].map(([k, v], i) => `<div class="bp-bar-row" style="grid-template-columns:90px 1fr 40px"><span>${k}</span><div class="bp-bar-track"><div class="bp-bar ${i === 3 ? 'bp-alt' : ''}" style="width:${s.leads ? v / s.leads * 100 : 0}%"></div></div><b>${v}</b></div>`).join(''), '', 'chart')}
+    </div></div>`;
+}
+
+/* ---------- views: dashboard ---------- */
+function viewDashboard() {
+  const leads = S.leads.filter(l => S.now - l.createdAt <= 30 * DAY);
+  const resp = leads.filter(l => l.firstResponseAt && l.assignedAt).map(l => l.firstResponseAt - l.assignedAt).sort((a, b) => a - b);
+  const median = resp.length ? resp[Math.floor(resp.length / 2)] : 0;
+  const breaches = leads.filter(l => l.breached).length;
+  const untouched = S.leads.filter(l => OPEN.includes(l.status) && S.now - (l.lastActivityAt || l.createdAt) > 48 * HOUR);
+  const conv = leads.filter(l => l.status === 'Converted').length;
+  const chans = CHANNELS.map(ch => {
+    const ls = leads.filter(l => l.channel === ch);
+    const ds = S.deals.filter(d => d.channel === ch && !d.lost);
+    return {ch, leads:ls.length, q:ls.filter(l => ['Qualified', 'Converted'].includes(l.status)).length, deals:ds.length, rec:ds.filter(d => d.commission.status >= 3).reduce((a, d) => a + commissionCalc(d).gross, 0)};
+  }).filter(r => r.leads || r.deals).sort((a, b) => b.leads - a.leads);
+  const maxL = Math.max(1, ...chans.map(r => r.leads));
+  const lost = LOST_REASONS.map(r => ({r, n:S.leads.filter(l => l.status === 'Lost' && l.lostReason === r).length})).sort((a, b) => b.n - a.n);
+  const maxLost = Math.max(1, ...lost.map(x => x.n));
+  const board = agents().map(a => {
+    const ls = leads.filter(l => l.ownerId === a.id);
+    const rs = ls.filter(l => l.firstResponseAt).map(l => l.firstResponseAt - l.assignedAt);
+    const ds = S.deals.filter(d => d.ownerId === a.id && !d.lost);
+    return {a, open:openLoad(a.id), avg:rs.length ? rs.reduce((x, y) => x + y, 0) / rs.length : 0, breaches:ls.filter(l => l.breached).length, deals:ds.length, rec:ds.filter(d => d.commission.status >= 3).reduce((x, d) => x + commissionCalc(d).agent, 0)};
+  }).sort((x, y) => y.deals - x.deals || x.avg - y.avg);
+  const stuckDeals = S.deals.filter(d => !d.lost && stageOf(d).slaDays && S.now - d.stageEnteredAt > stageOf(d).slaDays * DAY);
+  const overdueComm = S.deals.filter(d => d.commission.status > 0 && d.commission.status < 3 && d.commission.claimedAt && S.now - d.commission.claimedAt > 30 * DAY);
+  return pageHeader('dashboard', 'Dashboard · last 30 days', 'Sales &amp; marketing performance', '', detailsRow([['Viewing as', esc(me().name) + ' · ' + esc(me().role)], ['Data', 'Live from this demo – capture or convert leads and watch it change']]))
+    + `<div class="bp-tiles slds-m-bottom_small">
+      <div class="bp-tile ${median <= S.cfg.sla.firstResponseMin * MIN ? 'bp-good' : 'bp-warn'}"><div class="bp-tile-label">Speed to lead (median)</div><div class="bp-tile-value">${fmtDur(median)}</div><div class="bp-tile-sub">SLA ${S.cfg.sla.firstResponseMin} min</div></div>
+      <div class="bp-tile ${breaches ? 'bp-bad' : 'bp-good'}"><div class="bp-tile-label">SLA breaches</div><div class="bp-tile-value">${breaches}</div><div class="bp-tile-sub">${leads.length ? Math.round(breaches / leads.length * 100) : 0}% of ${leads.length} leads</div></div>
+      <div class="bp-tile ${untouched.length ? 'bp-bad' : 'bp-good'}"><div class="bp-tile-label">Open leads untouched &gt; 48h</div><div class="bp-tile-value">${untouched.length}</div></div>
+      <div class="bp-tile"><div class="bp-tile-label">Lead → deal conversion</div><div class="bp-tile-value">${leads.length ? (conv / leads.length * 100).toFixed(1) : 0}%</div></div>
+      <div class="bp-tile ${stuckDeals.length ? 'bp-warn' : 'bp-good'}"><div class="bp-tile-label">Deals stuck past stage limit</div><div class="bp-tile-value">${stuckDeals.length}</div></div>
+      <div class="bp-tile ${overdueComm.length ? 'bp-bad' : 'bp-good'}"><div class="bp-tile-label">Commission overdue &gt; 30d</div><div class="bp-tile-value">${overdueComm.length}</div><div class="bp-tile-sub">${fmtAED(overdueComm.reduce((a, d) => a + commissionCalc(d).gross, 0))}</div></div>
+    </div>
+    <div class="bp-grid bp-cols-2"><div>
+      ${card('Funnel by channel (leads → qualified → deals → commission received)', `${chans.map(r => `<div class="bp-bar-row"><span>${esc(r.ch)}</span><div><div class="bp-bar-track"><div class="bp-bar" style="width:${r.leads / maxL * 100}%"></div></div><div class="bp-bar-track" style="margin-top:2px;height:6px"><div class="bp-bar bp-alt" style="height:6px;width:${r.q / maxL * 100}%"></div></div><div class="bp-bar-track" style="margin-top:2px;height:6px"><div class="bp-bar bp-alt2" style="height:6px;width:${r.deals / maxL * 100}%"></div></div></div><span class="bp-muted">${r.leads} · ${r.q} · ${r.deals}<br>${fmtK(r.rec)}</span></div>`).join('')}<div class="bp-small bp-muted slds-m-top_x-small"><span style="color:#0176d3">■</span> leads <span style="color:#06a59a">■</span> qualified <span style="color:#9050e9">■</span> deals · right column: commission received (AED)</div>`, '', 'metrics')}
+      ${card('Agent leaderboard', `<table class="slds-table slds-table_cell-buffer slds-table_bordered bp-small"><thead><tr><th>Agent</th><th>BRN</th><th>Open leads</th><th>Avg response</th><th>Breaches</th><th>Deals</th><th>Agent commission received</th></tr></thead><tbody>${board.map(b => `<tr><td>${esc(b.a.name)}</td><td>${b.a.brnExpiry > S.now ? badge('Valid', 'slds-theme_success') : badge('Expired', 'slds-theme_error')}</td><td>${b.open}</td><td>${b.avg ? fmtDur(b.avg) : '—'}</td><td>${b.breaches}</td><td>${b.deals}</td><td>${fmtAED(b.rec)}</td></tr>`).join('')}</tbody></table>`, '', 'people')}
+    </div><div>
+      ${card('Lost reasons', lost.map(x => `<div class="bp-bar-row" style="grid-template-columns:170px 1fr 30px"><span>${esc(x.r)}</span><div class="bp-bar-track"><div class="bp-bar" style="background:#ba0517;width:${x.n / maxLost * 100}%"></div></div><b>${x.n}</b></div>`).join(''), '', 'report')}
+      ${card('Ageing leads – no activity for 48h+', untouched.length ? `<table class="slds-table slds-table_bordered bp-small"><tbody>${untouched.sort((a, b) => (a.lastActivityAt || a.createdAt) - (b.lastActivityAt || b.createdAt)).slice(0, 8).map(l => `<tr><td><a class="bp-link" data-act="open" data-view="lead" data-id="${l.id}">${esc(l.name)}</a></td><td>${esc(userName(l.ownerId))}</td><td>${statusBadge(l.status)}</td><td class="bp-fail">${fmtDur(S.now - (l.lastActivityAt || l.createdAt))}</td></tr>`).join('')}</tbody></table>` : '<div class="bp-empty">None.</div>', '', 'timesheet')}
+      ${card('Unassigned queue', (() => { const q = S.leads.filter(l => !l.ownerId && OPEN.includes(l.status)); return q.length ? q.map(l => `<div class="bp-small slds-p-vertical_xx-small"><a class="bp-link" data-act="open" data-view="lead" data-id="${l.id}">${esc(l.name)}</a> · ${esc(l.lob)} · waiting ${fmtDur(S.now - l.createdAt)}</div>`).join('') : '<div class="bp-empty">Empty.</div>'; })(), '', 'queue')}
+    </div></div>`;
+}
+
+/* ---------- views: setup ---------- */
+function viewSetup() {
+  if (me().role !== 'Firm Admin') return card('Setup', '<div class="bp-empty">Only the Firm Admin can change settings.</div>');
+  const secs = [['packages', 'Packages & licence'], ['routing', 'Lead routing'], ['sla', 'SLA & escalation'], ['telemarketing', 'Telemarketing guard'], ['stages', 'Pipelines & stages'], ['commission', 'Commission rates'], ['agents', 'Agents & licences'], ['rulepacks', 'Emirate rule packs']];
+  const sec = S.setupSec;
+  const nav = `<div class="slds-card slds-p-vertical_small"><nav class="slds-nav-vertical slds-nav-vertical_compact"><div class="slds-nav-vertical__section"><h2 class="slds-nav-vertical__title">Firm settings</h2><ul>${secs.map(([id, l]) => `<li class="slds-nav-vertical__item ${sec === id ? 'slds-is-active' : ''}"><a class="slds-nav-vertical__action" data-act="setupSec" data-id="${id}">${esc(l)}</a></li>`).join('')}</ul></div></nav></div>`;
+  const body = {packages:setupPackages, routing:setupRouting, sla:setupSla, telemarketing:setupTele, stages:setupStages, commission:setupCommission, agents:setupAgents, rulepacks:setupRulePacks}[sec]();
+  return pageHeader('custom', 'Setup', 'Firm administration', '', detailsRow([['Stored as', 'Custom metadata and settings in the firm’s own org. No code changes per firm.']])) + `<div class="bp-setup">${nav}<div>${body}</div></div>`;
+}
+function setupPackages() {
+  const f = S.cfg.features;
+  const mapRows = [['Leads', 'Broker_Lead__c', f.bridge ? 'Broker_Lead__c ⇄ Lead' : 'Broker_Lead__c'], ['Deals', 'Deal__c', f.bridge ? 'Deal__c ⇄ Opportunity' : 'Deal__c'], ['Campaigns', 'Marketing_Campaign__c', 'Marketing_Campaign__c'], ['Clients', 'Contact + Individual Account', 'Contact + Individual Account'], ['Activities', 'Task / Event', 'Task / Event']];
+  return card('Feature parameters (set by ThinkVibes from the Feature Management App)', `
+      <div class="slds-notify slds-notify_alert slds-alert_offline slds-m-bottom_small" style="background:#706e6b"><h2>Demo control. In production a firm admin can’t change these; ThinkVibes sets them when the firm’s plan changes.</h2></div>
+      ${fToggle('<b>Option B – Marketing campaigns</b> (campaign management, permit gate, spend, attribution, ROI)', f.optionB, 'featOptionB')}
+      <p class="bp-small bp-muted slds-m-bottom_medium">Off = Option A (Lead Operations). Turning it off hides Campaigns without moving any data, so a firm can upgrade later.</p>
+      ${fSelect('lic', 'Licence path (D27)', [['OEM', 'ThinkVibes buys – OEM Embedded org'], ['Direct', 'Firm buys – Sales Cloud org']], f.licencePath, false, 'data-act="licencePath"')}
+      ${f.licencePath === 'Direct' ? fToggle('Sales Cloud Bridge (extension package): sync with standard Lead and Opportunity', f.bridge, 'featBridge') : '<p class="bp-small bp-muted">OEM Embedded orgs may not use Lead, Opportunity or Campaign, so the Sales Cloud Bridge is not available.</p>'}
+      <table class="slds-table slds-table_bordered slds-table_cell-buffer bp-small slds-m-top_small"><thead><tr><th>Concept</th><th>Core package (both paths)</th><th>This org</th></tr></thead><tbody>${mapRows.map(r => `<tr><td>${r[0]}</td><td><code>${r[1]}</code></td><td><code>${esc(r[2])}</code></td></tr>`).join('')}</tbody></table>`, '', 'apps');
+}
+function setupRouting() {
+  const rs = S.cfg.routing, t = S.routingTest;
+  const test = routeLead(mkLead({name:'Test lead', lang:t.lang, lob:t.lob}));
+  S.leads = S.leads.filter(l => l.name !== 'Test lead');
+  return card('Routing rules (evaluated top to bottom)', `<table class="slds-table slds-table_bordered slds-table_cell-buffer bp-small"><thead><tr><th>#</th><th>Rule</th><th>Type</th><th>On</th><th>Order</th></tr></thead><tbody>${rs.map((r, i) => `<tr><td>${i + 1}</td><td><b>${esc(r.label)}</b><div class="bp-muted">${esc(r.desc)}</div></td><td>${r.order ? 'Ordering' : r.hard ? 'Hard filter' : 'Filter'}</td><td>${fToggle('', r.on, 'routingToggle', `data-idx="${i}"`, !!r.hard)}${r.hard ? '<div class="bp-muted" style="font-size:11px">Required – can’t be switched off</div>' : ''}</td><td><button class="slds-button slds-button_icon slds-button_icon-border" data-act="routingUp" data-idx="${i}" ${i === 0 ? 'disabled' : ''} title="Move up">${bIconOnly('arrowup')}</button> <button class="slds-button slds-button_icon slds-button_icon-border" data-act="routingDown" data-idx="${i}" ${i === rs.length - 1 ? 'disabled' : ''} title="Move down">${bIconOnly('arrowdown')}</button></td></tr>`).join('')}</tbody></table>
+      <p class="bp-small bp-muted slds-m-top_x-small">Filters remove agents; ordering rules rank whoever is left. The language rule is relaxed when nobody speaks the language. If no agent is left, the lead goes to the unassigned queue.</p>`, '', 'assignment')
+    + card('Test routing (dry run)', `<div class="slds-grid slds-gutters_x-small"><div class="slds-col">${fSelect('rt-lang', 'Lead language', LANGS, t.lang, false, 'data-act="routingTest" data-key="lang"')}</div><div class="slds-col">${fSelect('rt-lob', 'Line of business', LOBS, t.lob, false, 'data-act="routingTest" data-key="lob"')}</div></div>${traceTable(test.trace)}`, '', 'flow');
+}
+function setupSla() {
+  const s = S.cfg.sla;
+  return card('SLA & escalation', `<div class="slds-grid slds-gutters_x-small"><div class="slds-col">${fInput('sla-first', 'First-response SLA (minutes)', s.firstResponseMin, 'number', true, 'min="1" max="240"')}</div><div class="slds-col">${fInput('sla-reassign', 'Re-assign after breach (minutes)', s.reassignAfterMin, 'number', true, 'min="1" max="480"')}</div></div>
+    <div id="modal-errors"></div>
+    <div class="bp-flow slds-m-vertical_small"><span>Lead assigned</span>→<span>Agent notified</span>→<span>${s.firstResponseMin} min: breach → Team Leader notified</span>→<span>+${s.reassignAfterMin} min: re-assigned / queue</span></div>
+    <button class="slds-button slds-button_brand" data-act="saveSla">Save</button>`, '', 'timesheet');
+}
+function setupTele() {
+  const w = S.cfg.callWindow;
+  return card('Telemarketing guard – UAE Cabinet Resolution 56/2024', `<div class="slds-notify slds-notify_alert slds-alert_offline slds-m-bottom_small" style="background:#706e6b"><h2>Locked: these rules come from law and the Emirate rule pack, not firm preference (D20).</h2></div>
+    <dl class="bp-kv"><dt>Calling window</dt><dd>${pad(w.start)}:00–${pad(w.end)}:00 GST, hard block outside it</dd><dt>DNC registry</dt><dd>Calls blocked for listed numbers (${DNC_REGISTRY.map(esc).join(', ')} in this demo)</dd><dt>Refusal</dt><dd>No repeat call the same day after a refusal</dd><dt>Personal numbers</dt><dd>Calls only from the firm’s registered numbers (telephony integration)</dd><dt>Call records</dt><dd>Every call logged as a Task with its outcome</dd></dl>`, '', 'call');
+}
+function setupStages() {
+  const t = S.stageTab, st = S.cfg.stages[t];
+  return card('Pipeline stages (Deal_Stage_Config__mdt)', `${tabs([['Off-plan', 'Off-plan'], ['Secondary', 'Secondary sale']], t, 'stageTab')}
+    <div id="modal-errors" class="slds-m-top_small"></div>
+    <table class="slds-table slds-table_bordered slds-table_cell-buffer bp-small slds-m-top_small"><thead><tr><th>#</th><th>Stage</th><th>Active</th><th>Time limit (days)</th><th>Required documents (comma-separated)</th><th>KYC gate</th><th>Commission earned</th></tr></thead><tbody>${st.map((s, i) => {
+      const locked = i === 0 || i === st.length - 1;
+      return `<tr><td>${i + 1}</td><td style="min-width:190px"><input class="slds-input" value="${esc(s.name)}" data-act="stageField" data-idx="${i}" data-key="name"></td><td>${fToggle('', s.active, 'stageActive', `data-idx="${i}"`, locked)}</td><td style="width:90px"><input class="slds-input" type="number" min="0" value="${s.slaDays}" data-act="stageField" data-idx="${i}" data-key="slaDays"></td><td><input class="slds-input" value="${esc(s.docs.join(', '))}" data-act="stageField" data-idx="${i}" data-key="docs"></td><td><input type="checkbox" ${s.kyc ? 'checked' : ''} data-act="stageFlag" data-idx="${i}" data-key="kyc"></td><td><input type="radio" name="comm-${t}" ${s.commission ? 'checked' : ''} data-act="stageComm" data-idx="${i}"></td></tr>`;
+    }).join('')}</tbody></table>
+    <div class="slds-m-top_small"><button class="slds-button slds-button_neutral" data-act="addStage">${bIcon('add')}Add stage before “${esc(st[st.length - 1].name)}”</button></div>
+    <p class="bp-small bp-muted slds-m-top_x-small">Changes apply immediately to the pipeline board and the stage gates. The first and last stages can’t be switched off. Exactly one stage marks when commission is earned.</p>`, '', 'flow');
+}
+function setupCommission() {
+  const c = S.cfg;
+  const sum = c.splits.agent + c.splits.teamLeader + c.splits.referral;
+  return card('Commission rates', `<table class="slds-table slds-table_bordered slds-table_cell-buffer bp-small"><thead><tr><th>Developer</th><th>Project</th><th>Deal type</th><th>Payer</th><th>Rate %</th></tr></thead><tbody>${c.commissionRates.map((r, i) => `<tr><td>${esc(r.developer)}</td><td>${esc(r.project)}</td><td>${esc(r.dealType)}</td><td>${esc(r.payer)}</td><td style="width:110px"><input class="slds-input" type="number" step="0.25" min="0" max="100" value="${r.rate}" data-act="rateField" data-idx="${i}">${r.rate > 10 ? '<div class="bp-fail" style="font-size:11px">Unusually high – confirm (D14)</div>' : ''}</td></tr>`).join('')}</tbody></table>`, '', 'currency')
+    + card('Splits of firm net commission', `<div class="slds-grid slds-gutters_x-small">${[['agent', 'Agent %'], ['teamLeader', 'Team leader %'], ['referral', 'Referral % (referral leads only)']].map(([k, l]) => `<div class="slds-col">${fInput('split-' + k, l, c.splits[k], 'number', true, `min="0" max="100" data-act="splitField" data-key="${k}"`)}</div>`).join('')}</div>
+      <p class="bp-small ${sum > 100 ? 'bp-fail' : 'bp-muted'}">Total ${sum}% ${sum > 100 ? '– exceeds 100%, not saved' : '· the firm retains ' + (100 - sum) + '% (less on non-referral leads)'} · VAT ${c.vat}% added on the invoice (fixed by law).</p>`, '', 'budget_allocation');
+}
+function setupAgents() {
+  return card('Agents & licences', `<table class="slds-table slds-table_bordered slds-table_cell-buffer bp-small"><thead><tr><th>Agent</th><th>Role</th><th>BRN</th><th>Expiry</th><th>Languages</th><th>Lines of business</th><th>Open leads</th><th>Active</th><th></th></tr></thead><tbody>${Object.values(S.users).filter(u => u.brn).map(u => {
+      const exp = u.brnExpiry < S.now, soon = !exp && u.brnExpiry - S.now < 60 * DAY;
+      return `<tr><td>${esc(u.name)}</td><td>${esc(u.role)}</td><td>${esc(u.brn)}</td><td>${fmtDate(u.brnExpiry)} ${exp ? badge('Expired – excluded from routing', 'slds-theme_error') : soon ? badge('Expires soon', 'slds-theme_warning') : ''}</td><td>${esc(u.langs.join(', '))}</td><td>${esc(u.lob.join(', '))}</td><td>${openLoad(u.id)}</td><td>${u.role === 'Agent' ? fToggle('', u.active, 'agentActive', `data-id="${u.id}"`) : ''}</td><td>${exp || soon ? `<button class="slds-button slds-button_neutral slds-button_small" data-act="renewBrn" data-id="${u.id}">Record renewal</button>` : ''}</td></tr>`;
+    }).join('')}</tbody></table>`, '', 'people');
+}
+function setupRulePacks() {
+  return card('Emirate rule packs (shipped as custom metadata)', `<table class="slds-table slds-table_bordered slds-table_cell-buffer bp-small"><thead><tr><th>Emirate</th><th>Regulator</th><th>Ad permit</th><th>Registrations</th><th>Status</th></tr></thead><tbody>${S.cfg.rulePacks.map(r => `<tr><td><b>${esc(r.emirate)}</b></td><td>${esc(r.regulator)}</td><td>${esc(r.permit)}</td><td>${esc(r.registration)}</td><td>${badge(r.status, r.status === 'Active' ? 'slds-theme_success' : r.status === 'In legal review' ? 'slds-theme_warning' : '')}</td></tr>`).join('')}</tbody></table>
+    <p class="bp-small bp-muted slds-m-top_x-small">All emirates are selectable, but a pack is only switched on once it is researched and verified by a UAE real estate lawyer (D10). Firms can’t activate an unverified pack.</p>`, '', 'location');
+}
+
+/* ---------- workshop guide ---------- */
+const GUIDE = [
+  {t:'Portal lead arrives', d:'A Property Finder enquiry is captured with its campaign and creative, checked against the DNC registry and routed. The view switches to the agent who receives it.', run:() => { setPersona('u_rania'); simulate('pf'); const l = leadById(S.recId); if (l && l.ownerId) setPersona(l.ownerId); }},
+  {t:'Repeat enquiry is merged', d:'The same client enquires again from another portal. Matched on normalised phone, so no duplicate is created.', run:() => { setPersona('u_rania'); simulate('dup'); }},
+  {t:'Expired licence is skipped', d:'A Russian-speaking lead: Dmitri speaks Russian but his BRN expired, so routing picks Lena.', run:() => { setPersona('u_rania'); simulate('ru'); }},
+  {t:'SLA breach → escalate → re-assign', d:'Rohit was assigned to Sara 9 minutes ago with no response. The clock speeds up to ×120: watch the timer, the escalation and the automatic re-assignment.', run:() => { setPersona('u_rania'); rearmRohit(); S.slowAfter = S.story.rohit; S.speed = 120; S.playing = true; go('lead', S.story.rohit); }},
+  {t:'Telemarketing guard', d:'Jump to 18:40 and try to call: the call is blocked and the attempt is logged.', run:() => { setPersona('u_sara'); jumpTo('18:40'); go('lead', S.story.chloe); setTimeout(() => doCall(leadById(S.story.chloe)), 300); }},
+  {t:'Qualify and convert', d:'Chloé is qualified. Convert her into an off-plan deal: Contact + Individual Account + Deal are created.', run:() => { setPersona('u_sara'); jumpTo('10:30'); go('lead', S.story.chloe); setTimeout(() => ACT.convert(), 300); }},
+  {t:'Document gate on the pipeline', d:'Hassan’s deal is in “Reservation form” without the form or KYC. Try to drag it to the next column.', run:() => { setPersona('u_sara'); S.dealType = 'Off-plan'; S.highlight = S.story.hassanDeal; go('deals'); }},
+  {t:'Payment plan & handover', d:'Record milestones as paid and see the developer commission threshold (30%). Then fill the handover checklist.', run:() => { setPersona('u_sara'); go('deal', S.story.hassanDeal, 'payments'); }},
+  {t:'Commission → campaign ROI', d:'Follow commission from expected to received, then see it in the campaign’s ROI.', run:() => { setPersona('u_khalid'); const d = S.deals.find(x => x.commission.status >= 3 && x.campaignId) || S.deals[0]; go('deal', d.id, 'commission'); }},
+  {t:'Manager & marketing views', d:'Speed to lead, SLA breaches, ageing leads, lost reasons and funnel by channel.', run:() => { setPersona('u_khalid'); go('dashboard'); }},
+  {t:'Campaign permit gate', d:'The roadshow campaign has no ad permit, so it can’t be activated. Add a permit, then activate.', run:() => { setPersona('u_maya'); go('campaign', 'C-103'); }},
+  {t:'Firm admin configuration', d:'Routing rules, SLA, stages, commission rates and the Option A/B switch – all without code.', run:() => { setPersona('u_faisal'); S.setupSec = 'routing'; go('setup'); }},
+];
+function guideHtml() {
+  if (!S.guideOpen) return `<div class="bp-guide-min"><button class="slds-button slds-button_brand" data-act="guideOpen">${bIcon('knowledge_base')}Workshop script</button></div>`;
+  return `<div class="bp-guide">${card('Workshop script', `<div class="bp-steps">${GUIDE.map((g, i) => `<div class="bp-step ${S.guideStep === i ? 'bp-on' : ''}"><span class="bp-step-n">${i + 1}</span><div class="bp-step-body"><b>${esc(g.t)}</b><span class="bp-muted">${esc(g.d)}</span></div><button class="slds-button slds-button_neutral slds-button_small" data-act="guideRun" data-idx="${i}">Go</button></div>`).join('')}</div>`, `<button class="slds-button slds-button_icon" data-act="guideClose" title="Minimise">${bIconOnly('minimize_window')}</button>`, 'knowledge')}</div>`;
+}
+function setPersona(id) { S.persona = id; }
+function rearmRohit() {
+  const l = leadById(S.story.rohit);
+  if (!l || ['Converted', 'Lost'].includes(l.status)) return;
+  l.status = 'New'; l.ownerId = 'u_sara'; l.assignedAt = S.now - 9 * MIN; l.slaDueAt = S.now + 6 * MIN; l.firstResponseAt = null; l.escalated = false;
+  activity(l, 'system', 'Workshop: SLA timer re-armed (9 minutes since assignment, 6 minutes left).', 'Demo');
+}
+function jumpTo(v) {
+  const d = new Date(S.now);
+  let base = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  if (v === 'next') { S.now = base + DAY + 9 * HOUR + 5 * MIN; return; }
+  const [h, m] = v.split(':').map(Number);
+  S.now = base + h * HOUR + m * MIN;
+}
+
+/* ---------- footer ---------- */
+const footerHtml = () => `<footer class="bp-footer">Workshop prototype by ThinkVibes · all people, firms, projects and figures are fictional · not affiliated with or endorsed by Salesforce.<br>Built with the <a href="https://www.lightningdesignsystem.com/" target="_blank" rel="noopener">Salesforce Lightning Design System</a> (BSD-3-Clause) and its icons (<a href="https://creativecommons.org/licenses/by-nd/4.0/" target="_blank" rel="noopener">CC BY-ND 4.0</a>, unmodified).</footer>`;
+
+/* ---------- render ---------- */
+function render() {
+  const views = {home:viewHome, leads:viewLeads, lead:viewLead, deals:viewDeals, deal:viewDeal, campaigns:viewCampaigns, campaign:viewCampaign, dashboard:viewDashboard, setup:viewSetup};
+  const allowed = navItems().map(x => x[0]);
+  if (!allowed.includes(viewGroup(S.view))) S.view = allowed[0];
+  $('#app').className = S.guideOpen ? 'bp-has-guide' : '';
+  $('#app').innerHTML = headerHtml() + `<main class="bp-main">${(views[S.view] || viewHome)()}${footerHtml()}</main>` + guideHtml();
+}
+function refreshLive() {
+  const c = $('#clock'); if (c) c.textContent = fmtTime(S.now);
+  document.querySelectorAll('[data-sla]').forEach(el => {
+    const l = leadById(el.getAttribute('data-sla')); if (!l) return;
+    const tmp = document.createElement('span'); tmp.innerHTML = slaBadge(l);
+    const n = tmp.firstElementChild; if (n) { el.className = n.className; el.textContent = n.textContent; }
+  });
+}
+
+/* ---------- actions ---------- */
+function doCall(l) {
+  if (!l) return;
+  const blocks = callBlocks(l);
+  if (blocks.length) {
+    activity(l, 'block', 'Call blocked by telemarketing guard: ' + blocks.join(' '), me().name);
+    render();
+    openModal('Call blocked', `<div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small"><h2>The telemarketing guard stopped this call.</h2></div><ul class="slds-list_dotted">${blocks.map(b => `<li>${esc(b)}</li>`).join('')}</ul><p class="bp-small bp-muted slds-m-top_small">UAE Cabinet Resolution 56/2024. The attempt is logged on the lead. Messaging is still possible where consent is recorded.</p>`);
+    return;
+  }
+  openModal('Call ' + esc(l.name), `<p class="slds-m-bottom_small">Calling ${esc(l.phone)} from the firm's registered number…</p>
+    <div id="modal-errors"></div>
+    ${fSelect('call-outcome', 'Outcome', [['', '— select —'], ['connected', 'Connected'], ['noanswer', 'No answer'], ['refused', 'Refused – do not call again today']], '', true)}
+    <div class="slds-form-element"><label class="slds-form-element__label" for="call-notes">Notes</label><div class="slds-form-element__control"><textarea class="slds-textarea" id="call-notes"></textarea></div></div>`,
+    `<button class="slds-button slds-button_neutral" data-act="closeModal">Cancel</button><button class="slds-button slds-button_brand" data-act="logCall">Log call</button>`);
+}
+const ACT = {
+  closeModal, closeToast:el => el.closest('.slds-notify').remove(),
+  nav:el => go(el.dataset.id),
+  open:el => { S.highlight = null; go(el.dataset.view, el.dataset.id, el.dataset.tab); },
+  persona:el => { S.persona = el.value; S.view = PERSONAS.find(p => p.id === el.value).home; S.leadFilter = 'mine'; render(); },
+  togglePlay:() => { S.playing = !S.playing; render(); },
+  speed:el => { S.speed = Number(el.value); },
+  jump:el => { if (!el.value) return; jumpTo(el.value); slaEngine(); render(); toast('info', 'Demo clock moved', 'Now ' + fmtTime(S.now) + ' GST, ' + fmtDate(S.now)); },
+  reset:() => { buildState(); closeModal(); render(); toast('success', 'Demo reset', 'All data restored to the starting point.'); },
+  toggleNotif:() => { S.notifOpen = !S.notifOpen; render(); },
+  markRead:() => { S.notifications.forEach(n => { if (n.userId === S.persona) n.read = true; }); render(); },
+  openNotif:el => { const n = S.notifications.find(x => x.id === el.dataset.id); if (!n) return; n.read = true; if (n.link) go(n.link.view, n.link.id); else render(); },
+  guideOpen:() => { S.guideOpen = true; render(); },
+  guideClose:() => { S.guideOpen = false; render(); },
+  guideRun:el => { const i = Number(el.dataset.idx); S.guideStep = i; closeModal(); GUIDE[i].run(); render(); },
+  sim:el => simulate(el.dataset.id),
+  leadFilter:el => { S.leadFilter = el.dataset.id; render(); },
+  newLead:() => {
+    openModal('New lead (manual entry)', `<div id="modal-errors"></div><div class="slds-grid slds-wrap slds-gutters_x-small">
+      <div class="slds-col slds-size_1-of-2">${fInput('nl-name', 'Full name', '', 'text', true)}</div>
+      <div class="slds-col slds-size_1-of-2">${fInput('nl-phone', 'Mobile', '', 'tel', true, 'placeholder="+971 50 000 0000"')}</div>
+      <div class="slds-col slds-size_1-of-2">${fInput('nl-email', 'Email', '', 'email')}</div>
+      <div class="slds-col slds-size_1-of-2">${fSelect('nl-lang', 'Preferred language', LANGS, 'English', true)}</div>
+      <div class="slds-col slds-size_1-of-2">${fSelect('nl-lob', 'Line of business', ['', ...LOBS], '', true)}</div>
+      <div class="slds-col slds-size_1-of-2">${fSelect('nl-channel', 'Source (declared)', ['', ...CHANNELS], 'Walk-in', true)}</div>
+      <div class="slds-col slds-size_1-of-2">${fSelect('nl-project', 'Project / listing', ['', ...PROJECTS.map(p => p.name)], '')}</div>
+      <div class="slds-col slds-size_1-of-2">${fInput('nl-budget', 'Budget (AED)', '', 'number', false, 'min="0"')}</div>
+      <div class="slds-col slds-size_1-of-1">${fSelect('nl-campaign', 'Campaign', [['', '— none —'], ...S.campaigns.map(c => [c.id, c.name])], '')}</div>
+      <div class="slds-col slds-size_1-of-1"><div class="slds-checkbox"><input type="checkbox" id="nl-consent" checked><label class="slds-checkbox__label" for="nl-consent"><span class="slds-checkbox_faux"></span><span class="slds-form-element__label">Client consented to be contacted</span></label></div></div>
+    </div>`, `<button class="slds-button slds-button_neutral" data-act="closeModal">Cancel</button><button class="slds-button slds-button_brand" data-act="saveLead">Save &amp; route</button>`);
+  },
+  saveLead:() => {
+    const budget = val('nl-budget');
+    if (budget && Number(budget) < 0) return modalError(['Budget can’t be negative.']);
+    const res = captureLead({name:val('nl-name'), phone:val('nl-phone'), email:val('nl-email'), lang:val('nl-lang'), lob:val('nl-lob'), channel:val('nl-channel'),
+      project:val('nl-project'), budget, campaignId:val('nl-campaign') || null, consent:$('#nl-consent').checked});
+    if (!res.ok) return modalError(res.errors);
+    closeModal();
+    toast(res.merged ? 'info' : 'success', res.merged ? 'Matched an existing lead' : 'Lead created', res.merged ? 'Merged as a repeat enquiry – no duplicate.' : `Routed to ${esc(userName(res.lead.ownerId))}`);
+    go('lead', res.lead.id);
+  },
+  importCsv:() => {
+    const sample = 'name,phone,email,language,line_of_business,budget\nNadia Rahim,+971501112233,nadia@example.com,Arabic,Off-plan,1800000\nTom Hughes,0507778899,,English,Secondary,1200000\nNo Phone Person,,x@example.com,English,Off-plan,900000\nAhmed Mansoori,+971502345678,,Arabic,Secondary,1900000';
+    openModal('Import leads from CSV', `<div id="modal-errors"></div>${fSelect('csv-channel', 'Source of these leads (required)', ['', ...CHANNELS], '', true)}
+      ${fSelect('csv-campaign', 'Campaign', [['', '— none —'], ...S.campaigns.map(c => [c.id, c.name])], '')}
+      <div class="slds-form-element slds-m-bottom_x-small"><label class="slds-form-element__label" for="csv-text">Paste CSV, or choose a file</label><div class="slds-form-element__control"><textarea class="slds-textarea" id="csv-text" style="min-height:140px;font-family:monospace;font-size:12px">${esc(sample)}</textarea></div></div>
+      <input type="file" accept=".csv,text/csv" id="csv-file" class="slds-m-bottom_small" data-act="csvFile">
+      <div id="csv-result"></div>`, `<button class="slds-button slds-button_neutral" data-act="closeModal">Close</button><button class="slds-button slds-button_brand" data-act="runImport">Import</button>`, 'medium');
+  },
+  runImport:() => {
+    const channel = val('csv-channel');
+    if (!channel) return modalError(['Declare the source of these leads before importing.']);
+    const lines = val('csv-text').trim().split(/\r?\n/).filter(x => x.trim());
+    if (lines.length < 2) return modalError(['The CSV needs a header row and at least one data row.']);
+    const head = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const need = ['name', 'phone', 'line_of_business'];
+    const missingCols = need.filter(n => !head.includes(n));
+    if (missingCols.length) return modalError(['Missing columns: ' + missingCols.join(', ')]);
+    modalError([]);
+    const out = [];
+    lines.slice(1).forEach((line, i) => {
+      const cells = line.split(','); const row = {}; head.forEach((h, j) => row[h] = (cells[j] || '').trim());
+      const res = captureLead({name:row.name, phone:row.phone, email:row.email, lang:LANGS.includes(row.language) ? row.language : 'English', lob:row.line_of_business, channel, budget:row.budget, campaignId:val('csv-campaign') || null});
+      out.push({n:i + 2, name:row.name || '(blank)', res});
+    });
+    const ok = out.filter(o => o.res.ok && !o.res.merged).length, merged = out.filter(o => o.res.ok && o.res.merged).length, bad = out.filter(o => !o.res.ok);
+    $('#csv-result').innerHTML = `<div class="slds-notify slds-notify_alert ${bad.length ? 'slds-alert_warning' : ''}" style="${bad.length ? '' : 'background:#2e844a'}"><h2>${ok} created and routed · ${merged} merged as repeat enquiries · ${bad.length} rejected</h2></div>${bad.length ? `<table class="slds-table slds-table_bordered bp-small slds-m-top_x-small"><thead><tr><th>Row</th><th>Name</th><th>Reason</th></tr></thead><tbody>${bad.map(b => `<tr><td>${b.n}</td><td>${esc(b.name)}</td><td class="bp-fail">${esc(b.res.errors.join(' '))}</td></tr>`).join('')}</tbody></table>` : ''}`;
+    render();
+  },
+  csvFile:el => { const f = el.files && el.files[0]; if (!f) return; if (f.size > 2e6) return modalError(['File is larger than 2 MB.']); const r = new FileReader(); r.onload = () => { $('#csv-text').value = String(r.result || ''); }; r.onerror = () => modalError(['Could not read the file.']); r.readAsText(f); },
+  call:() => doCall(leadById(S.recId)),
+  logCall:() => {
+    const l = leadById(S.recId), o = val('call-outcome'), notes = val('call-notes').trim();
+    if (!o) return modalError(['Choose the call outcome.']);
+    const text = {connected:'Outbound call – connected', noanswer:'Outbound call – no answer', refused:'Outbound call – client refused. No more calls today.'}[o];
+    activity(l, 'call', text + (notes ? '. ' + notes : ''), me().name);
+    firstResponse(l);
+    if (o === 'refused') l.refusalDate = S.now;
+    if (o === 'connected' && ['New', 'Attempted'].includes(l.status)) { l.status = 'Contacted'; activity(l, 'status', 'Status changed to Contacted', me().name); }
+    if (o !== 'connected' && l.status === 'New') { l.status = 'Attempted'; activity(l, 'status', 'Status changed to Attempted', me().name); }
+    closeModal(); render(); toast('success', 'Call logged', esc(text));
+  },
+  message:() => {
+    const l = leadById(S.recId);
+    openModal('Send an approved template', `<div id="modal-errors"></div>${!l.consent ? '<div class="slds-notify slds-notify_alert slds-alert_warning slds-m-bottom_small"><h2>No consent recorded – WhatsApp marketing is blocked for this lead.</h2></div>' : ''}
+      ${fSelect('tpl', 'Template', TEMPLATES.map(t => [t.id, `${t.ch} · ${t.name}`]), 't1', true, 'data-act="tplPreview"')}
+      <div class="slds-form-element"><label class="slds-form-element__label">Preview (merge fields filled)</label><div class="slds-box slds-theme_shade bp-small" id="tpl-preview" style="white-space:pre-wrap"></div></div>
+      <p class="bp-small bp-muted slds-m-top_x-small">The agent stays in control: nothing is sent until you click Send. Free-text messages outside approved templates are disabled for WhatsApp.</p>`,
+      `<button class="slds-button slds-button_neutral" data-act="closeModal">Cancel</button><button class="slds-button slds-button_brand" data-act="sendMsg">Send</button>`);
+    ACT.tplPreview();
+  },
+  tplPreview:() => {
+    const l = leadById(S.recId), t = TEMPLATES.find(x => x.id === val('tpl'));
+    if (!t || !$('#tpl-preview')) return;
+    $('#tpl-preview').textContent = t.body.replace('{FirstName}', l.name.split(' ')[0]).replace('{AgentName}', userName(l.ownerId)).replace(/\{Project\}/g, l.project || 'the project');
+  },
+  sendMsg:() => {
+    const l = leadById(S.recId), t = TEMPLATES.find(x => x.id === val('tpl'));
+    if (!t) return modalError(['Choose a template.']);
+    if (t.ch === 'WhatsApp' && !l.consent) return modalError(['Consent is missing, so WhatsApp marketing can’t be sent. Use email or record consent first.']);
+    activity(l, t.ch === 'WhatsApp' ? 'chat' : 'email', `${t.ch} sent: “${t.name}”`, me().name);
+    firstResponse(l);
+    if (l.status === 'New') { l.status = 'Attempted'; activity(l, 'status', 'Status changed to Attempted', me().name); }
+    closeModal(); render(); toast('success', t.ch + ' sent', esc(t.name));
+  },
+  qualify:() => {
+    const l = leadById(S.recId), q = l.qual;
+    const missing = [['finance', 'Finance'], ['area', 'Area / project'], ['unitType', 'Unit type'], ['residency', 'Residency'], ['purpose', 'Purpose'], ['timeline', 'Timeline'], ['otherBroker', 'Another broker involved?']].filter(([k]) => !q[k]).map(x => x[1]);
+    if (!l.budget) missing.unshift('Budget');
+    if (missing.length) { toast('error', 'Can’t qualify yet', 'Complete: ' + missing.map(esc).join(', ')); return; }
+    if (q.otherBroker === 'Yes') toast('warning', 'Another broker involved', 'Recorded. Consider a co-broking agreement before converting.');
+    l.status = 'Qualified'; firstResponse(l); activity(l, 'status', 'Status changed to Qualified', me().name); render(); toast('success', 'Lead qualified', esc(l.name));
+  },
+  nurture:() => { const l = leadById(S.recId); l.status = 'Nurture'; activity(l, 'status', 'Moved to Nurture – follow-up in 14 days', me().name); render(); toast('info', 'Moved to nurture', 'A follow-up task is scheduled in 14 days.'); },
+  markLost:() => openModal('Mark lead as lost', `<div id="modal-errors"></div>${fSelect('lost-reason', 'Reason', ['', ...LOST_REASONS], '', true)}<div class="slds-form-element"><label class="slds-form-element__label" for="lost-notes">Comments</label><textarea class="slds-textarea" id="lost-notes"></textarea></div>`, `<button class="slds-button slds-button_neutral" data-act="closeModal">Cancel</button><button class="slds-button slds-button_destructive" data-act="saveLost">Mark lost</button>`),
+  saveLost:() => {
+    const r = val('lost-reason'); if (!r) return modalError(['A lost reason is required.']);
+    const l = leadById(S.recId); l.status = 'Lost'; l.lostReason = r; activity(l, 'status', 'Marked Lost – ' + r + (val('lost-notes').trim() ? '. ' + val('lost-notes').trim() : ''), me().name);
+    closeModal(); render(); toast('info', 'Lead marked lost', esc(r));
+  },
+  reassign:() => {
+    const l = leadById(S.recId);
+    openModal('Re-assign lead', `<div id="modal-errors"></div>${fSelect('ra-owner', 'New owner', [['', '— select —'], ...agents().map(a => [a.id, `${a.name} · ${a.langs.join('/')} · ${a.brnExpiry > S.now ? 'BRN valid' : 'BRN EXPIRED'}`])], '', true)}`, `<button class="slds-button slds-button_neutral" data-act="closeModal">Cancel</button><button class="slds-button slds-button_brand" data-act="saveReassign">Re-assign</button>`);
+  },
+  saveReassign:() => {
+    const id = val('ra-owner'); if (!id) return modalError(['Choose an agent.']);
+    const a = S.users[id]; if (a.brnExpiry <= S.now) return modalError([a.name + '’s BRN has expired. Agents without a valid licence can’t receive leads.']);
+    const l = leadById(S.recId); const prev = l.ownerId;
+    assignLead(l, a, [{rule:'Manual re-assignment', note:`By ${me().name} from ${userName(prev)}`, rows:[]}], 'Manually re-assigned');
+    closeModal(); render(); toast('success', 'Lead re-assigned', esc(a.name));
+  },
+  convert:() => {
+    const l = leadById(S.recId);
+    if (!l || l.status !== 'Qualified') { toast('error', 'Not ready to convert', 'Only qualified leads can be converted.'); return; }
+    const projs = PROJECTS.filter(p => (l.lob === 'Secondary' ? p.type === 'Secondary' : p.type === 'Off-plan'));
+    openModal('Convert ' + esc(l.name), `<div id="modal-errors"></div>
+      <div class="slds-box slds-theme_shade bp-small slds-m-bottom_small">Creates: <b>Contact</b> + <b>Individual Account</b> (1:1, D05) + <b>Deal__c</b> (${esc(l.lob)} record type). The campaign attribution is copied to the deal.</div>
+      <div class="slds-grid slds-wrap slds-gutters_x-small">
+        <div class="slds-col slds-size_1-of-2">${fSelect('cv-type', 'Deal type', ['Off-plan', 'Secondary'], l.lob === 'Secondary' ? 'Secondary' : 'Off-plan', true)}</div>
+        <div class="slds-col slds-size_1-of-2">${fSelect('cv-project', 'Project / listing', projs.map(p => p.name), l.project || (projs[0] && projs[0].name), true)}</div>
+        <div class="slds-col slds-size_1-of-2">${fInput('cv-unit', 'Unit', l.lob === 'Off-plan' ? 'B-2210' : '', 'text', true)}</div>
+        <div class="slds-col slds-size_1-of-2">${fInput('cv-price', 'Price (AED)', l.budget || '', 'number', true, 'min="1"')}</div>
+        <div class="slds-col slds-size_1-of-1"><div class="slds-checkbox"><input type="checkbox" id="cv-cob" data-act="cobToggle"><label class="slds-checkbox__label" for="cv-cob"><span class="slds-checkbox_faux"></span><span class="slds-form-element__label">Co-broking with another firm</span></label></div></div>
+        <div class="slds-col slds-size_1-of-2" id="cv-cob-firm" style="display:none">${fInput('cv-cobfirm', 'Other firm (ORN)', '', 'text', true)}</div>
+        <div class="slds-col slds-size_1-of-2" id="cv-cob-split" style="display:none">${fInput('cv-cobsplit', 'Their share of commission %', '50', 'number', true, 'min="1" max="99"')}</div>
+      </div>`, `<button class="slds-button slds-button_neutral" data-act="closeModal">Cancel</button><button class="slds-button slds-button_brand" data-act="saveConvert">Convert</button>`);
+  },
+  cobToggle:el => { $('#cv-cob-firm').style.display = el.checked ? '' : 'none'; $('#cv-cob-split').style.display = el.checked ? '' : 'none'; },
+  saveConvert:() => {
+    const l = leadById(S.recId), errs = [];
+    const type = val('cv-type'), project = val('cv-project'), unit = val('cv-unit').trim(), price = Number(val('cv-price'));
+    if (!project) errs.push('Choose a project or listing.');
+    if (!unit) errs.push('Unit is required.');
+    if (!(price > 0)) errs.push('Price must be greater than zero.');
+    const p = projectByName(project);
+    if (p && p.type !== type) errs.push(`“${project}” is a ${p.type} listing – it doesn’t match deal type ${type}.`);
+    let coBroker = null;
+    if ($('#cv-cob').checked) {
+      const firm = val('cv-cobfirm').trim(), split = Number(val('cv-cobsplit'));
+      if (!firm) errs.push('Enter the co-broking firm.');
+      if (!(split > 0 && split < 100)) errs.push('Co-broker share must be between 1 and 99%.');
+      coBroker = {firm, split};
+    }
+    if (errs.length) return modalError(errs);
+    const d = emptyDeal({name:`${l.name} – ${unit}`, clientName:l.name, leadId:l.id, contactId:nextId('CT'), accountId:nextId('AC'), type, project, unit, price,
+      ownerId:l.ownerId || S.persona, campaignId:l.campaignId, channel:l.channel, coBroker});
+    buildPayments(d);
+    activity(d, 'status', `Deal created from lead ${l.id}. Contact ${d.contactId} and Individual Account ${d.accountId} created.`, me().name);
+    if (coBroker) activity(d, 'status', `Co-broking recorded with ${coBroker.firm} (${coBroker.split}% of commission).`, me().name);
+    S.deals.push(d);
+    l.status = 'Converted'; activity(l, 'status', 'Converted to deal ' + d.id, me().name);
+    closeModal(); toast('success', 'Converted', `Deal ${esc(d.name)} created in “${esc(stageOf(d).name)}”.`);
+    go('deal', d.id);
+  },
+  dealType:el => { S.dealType = el.dataset.id; render(); },
+  dealTab:el => { S.tab = el.dataset.id; render(); },
+  advance:() => { advanceDeal(dealById(S.recId)); render(); },
+  dealLost:() => openModal('Mark deal as lost', `<div id="modal-errors"></div>${fSelect('dl-reason', 'Reason', ['', 'Client withdrew', 'Financing failed', 'Unit no longer available', 'Lost to another broker', 'KYC / AML concern'], '', true)}`, `<button class="slds-button slds-button_neutral" data-act="closeModal">Cancel</button><button class="slds-button slds-button_destructive" data-act="saveDealLost">Mark lost</button>`),
+  saveDealLost:() => { const r = val('dl-reason'); if (!r) return modalError(['A reason is required.']); const d = dealById(S.recId); d.lost = r; activity(d, 'status', 'Deal lost – ' + r, me().name); closeModal(); render(); },
+  uploadDoc:el => { S.pendingDoc = el.dataset.doc; const fp = $('#file-picker'); fp.value = ''; fp.click(); },
+  kycDoc:el => { const d = dealById(S.recId); d.kyc.docs[el.dataset.doc] = el.checked; activity(d, 'doc', `KYC: ${el.dataset.doc} ${el.checked ? 'received' : 'removed'}`, me().name); render(); },
+  kycField:el => { const d = dealById(S.recId); d.kyc[el.dataset.key] = el.value; activity(d, 'doc', `KYC: ${el.dataset.key === 'risk' ? 'risk rating' : 'sanctions screening'} set to ${el.value || '—'}`, me().name); render(); },
+  kycCash:el => { const d = dealById(S.recId); d.kyc.cash55k = el.checked; if (el.checked) { activity(d, 'block', 'Cash ≥ AED 55,000: REAR report task created for the AML officer (goAML).', 'Compliance'); notify('u_khalid', 'REAR report needed for ' + d.name, {view:'deal', id:d.id}); } render(); },
+  markPaid:el => {
+    const d = dealById(S.recId), p = d.payments[Number(el.dataset.idx)];
+    const earlier = d.payments.slice(0, Number(el.dataset.idx)).some(x => x.status !== 'Paid');
+    if (earlier) { toast('error', 'Record milestones in order', 'An earlier milestone is still unpaid.'); return; }
+    p.status = 'Paid'; p.paidAt = S.now;
+    activity(d, 'money', `${p.label} (${p.pct}%, ${fmtAED(p.amount)}) recorded as paid to ${d.type === 'Off-plan' ? 'developer escrow' : 'seller'}`, me().name);
+    const proj = projectByName(d.project);
+    if (proj && d.type === 'Off-plan' && paidPct(d) >= proj.threshold && paidPct(d) - p.pct < proj.threshold) { toast('success', 'Developer threshold reached', `${paidPct(d)}% paid – commission can be claimed once the stage allows.`); notify(d.ownerId, `Commission threshold reached on ${d.name}`, {view:'deal', id:d.id}); }
+    render();
+  },
+  handoverResult:el => { const d = dealById(S.recId), h = d.handover[Number(el.dataset.idx)]; if (el.value !== 'Pending' && !h.evidence.trim()) { toast('error', 'Evidence required', 'Enter a reference or file name before recording a result.'); el.value = h.result; return; } h.result = el.value; h.by = me().name; h.at = S.now; activity(d, 'status', `Handover check “${h.check}”: ${h.result}`, me().name); render(); },
+  handoverEvidence:el => { const d = dealById(S.recId); d.handover[Number(el.dataset.idx)].evidence = el.value; },
+  commNext:() => {
+    const d = dealById(S.recId), c = d.commission, s = c.status;
+    if (s === 0 && d.stageIdx < commissionTriggerIdx(d.type)) { toast('error', 'Not earned yet', 'The deal hasn’t reached the commission stage.'); return; }
+    c.status = s + 1;
+    if (c.status === 1) c.claimedAt = S.now;
+    if (c.status === 2) c.invoiceNo = 'INV-' + (6000 + Math.floor(Math.random() * 900));
+    if (c.status === 3) c.receivedAt = S.now;
+    if (c.status === 4) c.paidAt = S.now;
+    activity(d, 'money', 'Commission: ' + COMMISSION_FLOW[c.status] + (c.status === 2 ? ' (' + c.invoiceNo + ', incl. VAT)' : ''), me().name);
+    render(); toast('success', 'Commission ' + COMMISSION_FLOW[c.status].toLowerCase(), esc(d.name));
+  },
+  newCampaign:() => openModal('New campaign', `<div id="modal-errors"></div>${fInput('nc-name', 'Name', '', 'text', true)}${fSelect('nc-lob', 'Line of business', ['', ...LOBS], '', true)}${fSelect('nc-project', 'Project / listing', ['', ...PROJECTS.map(p => p.name)], '', true)}${fInput('nc-budget', 'Budget (AED)', '', 'number', true, 'min="1"')}<div class="slds-form-element"><span class="slds-form-element__label">Channels</span>${CHANNELS.map((c, i) => `<div class="slds-checkbox"><input type="checkbox" id="nc-ch-${i}" value="${esc(c)}" class="nc-ch"><label class="slds-checkbox__label" for="nc-ch-${i}"><span class="slds-checkbox_faux"></span><span class="slds-form-element__label">${esc(c)}</span></label></div>`).join('')}</div>`, `<button class="slds-button slds-button_neutral" data-act="closeModal">Cancel</button><button class="slds-button slds-button_brand" data-act="saveCampaign">Save as draft</button>`),
+  saveCampaign:() => {
+    const name = val('nc-name').trim(), lob = val('nc-lob'), project = val('nc-project'), budget = Number(val('nc-budget'));
+    const chs = [...document.querySelectorAll('.nc-ch:checked')].map(x => x.value), e = [];
+    if (!name) e.push('Name is required.'); if (!lob) e.push('Line of business is required.'); if (!project) e.push('Project is required.');
+    if (!(budget > 0)) e.push('Budget must be greater than zero.'); if (!chs.length) e.push('Pick at least one channel.');
+    if (e.length) return modalError(e);
+    const c = {id:nextId('C'), name, lob, project, emirate:'Dubai', status:'Draft', channels:chs, paused:[], budget, spend:{}, creatives:[], permit:null, targetLeads:0, targetDeals:0, start:null};
+    S.campaigns.push(c); closeModal(); go('campaign', c.id); toast('success', 'Campaign saved as draft', 'Add an ad permit before it can go live.');
+  },
+  addPermit:() => openModal('Ad permit (Trakheesi – Dubai)', `<div id="modal-errors"></div>${fInput('pm-no', 'Permit number (7 digits)', '', 'text', true)}${fInput('pm-exp', 'Expiry date', '', 'date', true)}`, `<button class="slds-button slds-button_neutral" data-act="closeModal">Cancel</button><button class="slds-button slds-button_brand" data-act="savePermit">Save permit</button>`),
+  savePermit:() => {
+    const no = val('pm-no').trim(), exp = val('pm-exp'), e = [];
+    if (!/^\d{7}$/.test(no)) e.push('Permit number must be exactly 7 digits.');
+    const t = exp ? Date.parse(exp + 'T23:59:00Z') : NaN;
+    if (!exp || isNaN(t)) e.push('Expiry date is required.'); else if (t <= S.now) e.push('Expiry must be in the future – an expired permit can’t be attached.');
+    if (e.length) return modalError(e);
+    const c = campaignById(S.recId); c.permit = {no, expiry:t}; closeModal(); render(); toast('success', 'Permit saved', 'Trakheesi ' + esc(no));
+  },
+  activateCampaign:() => {
+    const c = campaignById(S.recId), p = permitState(c);
+    if (!p.ok) { toast('error', 'Can’t go live', 'A campaign needs a valid ad permit for its emirate before it can be activated.'); return; }
+    if (S.cfg.rulePacks.find(r => r.emirate === c.emirate).status !== 'Active') { toast('error', 'Rule pack not active', c.emirate + ' isn’t verified yet.'); return; }
+    c.status = 'Active'; c.start = S.now; render(); toast('success', 'Campaign live', esc(c.name));
+  },
+  pauseCampaign:() => { const c = campaignById(S.recId); c.status = 'Paused'; render(); toast('info', 'Campaign paused', esc(c.name)); },
+  toggleChannel:el => { const c = campaignById(S.recId), ch = el.dataset.ch; c.paused = c.paused.includes(ch) ? c.paused.filter(x => x !== ch) : [...c.paused, ch]; render(); },
+  setupSec:el => { S.setupSec = el.dataset.id; render(); },
+  featOptionB:el => { S.cfg.features.optionB = el.checked; render(); toast('info', el.checked ? 'Option B on' : 'Option A only', el.checked ? 'Campaigns are visible again – no data was lost.' : 'Campaigns are hidden for all users. Data is kept.'); },
+  licencePath:el => { S.cfg.features.licencePath = el.value; if (el.value === 'OEM') S.cfg.features.bridge = false; render(); },
+  featBridge:el => { S.cfg.features.bridge = el.checked; render(); },
+  routingToggle:el => { const r = S.cfg.routing[Number(el.dataset.idx)]; if (r.hard) { el.checked = true; return; } r.on = el.checked; render(); },
+  routingUp:el => { const i = Number(el.dataset.idx), a = S.cfg.routing; [a[i - 1], a[i]] = [a[i], a[i - 1]]; render(); },
+  routingDown:el => { const i = Number(el.dataset.idx), a = S.cfg.routing; [a[i + 1], a[i]] = [a[i], a[i + 1]]; render(); },
+  routingTest:el => { S.routingTest[el.dataset.key] = el.value; render(); },
+  saveSla:() => {
+    const f = Number(val('sla-first')), r = Number(val('sla-reassign')), e = [];
+    if (!Number.isInteger(f) || f < 1 || f > 240) e.push('First-response SLA must be a whole number between 1 and 240 minutes.');
+    if (!Number.isInteger(r) || r < 1 || r > 480) e.push('Re-assign window must be a whole number between 1 and 480 minutes.');
+    if (e.length) return modalError(e);
+    S.cfg.sla = {firstResponseMin:f, reassignAfterMin:r}; render(); toast('success', 'SLA saved', `Applies to leads assigned from now on.`);
+  },
+  stageTab:el => { S.stageTab = el.dataset.id; render(); },
+  stageField:el => {
+    const st = S.cfg.stages[S.stageTab], s = st[Number(el.dataset.idx)], k = el.dataset.key;
+    if (k === 'name') { const v = el.value.trim(); if (!v) { toast('error', 'Stage name required', ''); el.value = s.name; return; } if (st.some((x, i) => i !== Number(el.dataset.idx) && x.name.toLowerCase() === v.toLowerCase())) { toast('error', 'Duplicate stage name', esc(v)); el.value = s.name; return; } s.name = v; }
+    if (k === 'slaDays') { const v = Number(el.value); if (!(v >= 0) || !Number.isInteger(v)) { toast('error', 'Time limit must be a whole number of days', ''); el.value = s.slaDays; return; } s.slaDays = v; }
+    if (k === 'docs') s.docs = el.value.split(',').map(x => x.trim()).filter(Boolean);
+    toast('success', 'Stage updated', esc(s.name));
+  },
+  stageActive:el => {
+    const st = S.cfg.stages[S.stageTab], i = Number(el.dataset.idx);
+    if (i === 0 || i === st.length - 1) { el.checked = true; return; }
+    if (!el.checked && S.deals.some(d => d.type === S.stageTab && d.stageIdx === i && !d.lost)) { toast('error', 'Stage in use', 'Move the deals out of this stage before switching it off.'); el.checked = true; return; }
+    if (!el.checked && st[i].commission) { toast('error', 'Commission stage', 'Pick another commission stage first.'); el.checked = true; return; }
+    st[i].active = el.checked; render();
+  },
+  stageFlag:el => { S.cfg.stages[S.stageTab][Number(el.dataset.idx)][el.dataset.key] = el.checked; },
+  stageComm:el => { const st = S.cfg.stages[S.stageTab], i = Number(el.dataset.idx); if (!st[i].active) { toast('error', 'Inactive stage', 'Commission can only be earned at an active stage.'); render(); return; } st.forEach((s, j) => s.commission = j === i); render(); },
+  addStage:() => {
+    const st = S.cfg.stages[S.stageTab]; let n = 1; while (st.some(s => s.name === 'New stage ' + n)) n++;
+    st.splice(st.length - 1, 0, {name:'New stage ' + n, active:true, slaDays:7, docs:[], kyc:false, commission:false});
+    S.deals.filter(d => d.type === S.stageTab && d.stageIdx >= st.length - 2).forEach(d => d.stageIdx++);
+    render(); toast('success', 'Stage added', 'Rename it in the table.');
+  },
+  rateField:el => { const v = Number(el.value); if (!(v >= 0 && v <= 100)) { toast('error', 'Rate must be between 0 and 100%', ''); el.value = S.cfg.commissionRates[Number(el.dataset.idx)].rate; return; } S.cfg.commissionRates[Number(el.dataset.idx)].rate = v; render(); },
+  splitField:el => {
+    const k = el.dataset.key, v = Number(el.value), next = {...S.cfg.splits, [k]:v};
+    if (!(v >= 0 && v <= 100)) { toast('error', 'Split must be between 0 and 100%', ''); render(); return; }
+    if (next.agent + next.teamLeader + next.referral > 100) { toast('error', 'Splits exceed 100%', 'Not saved.'); render(); return; }
+    S.cfg.splits = next; render();
+  },
+  agentActive:el => { S.users[el.dataset.id].active = el.checked; render(); },
+  renewBrn:el => { const u = S.users[el.dataset.id]; u.brnExpiry = Date.UTC(new Date(S.now).getUTCFullYear() + 1, new Date(S.now).getUTCMonth(), new Date(S.now).getUTCDate()); render(); toast('success', 'BRN renewal recorded', `${esc(u.name)} is eligible for routing again (valid to ${fmtDate(u.brnExpiry)}).`); },
+};
+
+/* ---------- event wiring ---------- */
+document.addEventListener('click', ev => {
+  const el = ev.target.closest('[data-act]');
+  if (!el) { if (S.notifOpen && !ev.target.closest('.bp-notif-pop')) { S.notifOpen = false; render(); } return; }
+  if (['SELECT', 'INPUT', 'TEXTAREA'].includes(el.tagName)) return;
+  const fn = ACT[el.dataset.act];
+  if (fn) { ev.preventDefault(); try { fn(el, ev); } catch (e) { console.error(e); toast('error', 'Something went wrong', esc(e.message)); } }
+});
+document.addEventListener('change', ev => {
+  const el = ev.target;
+  if (el.dataset && el.dataset.bind) {
+    const l = leadById(S.recId); if (!l) return;
+    if (el.dataset.bind === 'budget') { const v = Number(el.value); if (el.value && !(v > 0)) { toast('error', 'Budget must be a positive number', ''); el.value = l.budget || ''; return; } l.budget = v || 0; }
+    else l.qual[el.dataset.key] = el.value;
+    return;
+  }
+  if (el.dataset && el.dataset.act && ACT[el.dataset.act] && ['SELECT', 'INPUT', 'TEXTAREA'].includes(el.tagName)) {
+    try { ACT[el.dataset.act](el, ev); } catch (e) { console.error(e); toast('error', 'Something went wrong', esc(e.message)); }
+  }
+});
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && $('#modal-root').innerHTML) closeModal(); });
+$('#file-picker').addEventListener('change', ev => {
+  const f = ev.target.files && ev.target.files[0], d = dealById(S.recId), doc = S.pendingDoc;
+  if (!f || !d || !doc) return;
+  if (f.size > 25e6) { toast('error', 'File too large', 'The limit is 25 MB.'); return; }
+  d.docs[doc] = {file:f.name, at:S.now, by:me().name};
+  activity(d, 'doc', `${doc} uploaded (${f.name})`, me().name);
+  S.pendingDoc = null; render(); toast('success', 'Document uploaded', esc(doc));
+});
+document.addEventListener('dragstart', ev => { const c = ev.target.closest && ev.target.closest('[data-drag]'); if (c) { ev.dataTransfer.setData('text/plain', c.dataset.drag); ev.dataTransfer.effectAllowed = 'move'; } });
+document.addEventListener('dragover', ev => { const col = ev.target.closest && ev.target.closest('[data-drop]'); if (col) { ev.preventDefault(); document.querySelectorAll('.bp-drop').forEach(x => x !== col && x.classList.remove('bp-drop')); col.classList.add('bp-drop'); } });
+document.addEventListener('dragleave', ev => { const col = ev.target.closest && ev.target.closest('[data-drop]'); if (col && !col.contains(ev.relatedTarget)) col.classList.remove('bp-drop'); });
+document.addEventListener('drop', ev => {
+  const col = ev.target.closest && ev.target.closest('[data-drop]'); if (!col) return;
+  ev.preventDefault();
+  const d = dealById(ev.dataTransfer.getData('text/plain')); if (!d) return;
+  const to = Number(col.dataset.drop);
+  if (to !== d.stageIdx) advanceDeal(d, to);
+  S.highlight = null; render();
+});
+
+/* ---------- clock ---------- */
+setInterval(() => {
+  if (!S.playing) return;
+  S.now += S.speed * 1000;
+  const changed = slaEngine();
+  if (changed && !$('#modal-root').innerHTML) render(); else refreshLive();
+}, 1000);
+
+buildState();
+render();
+</script>
+</body>
+</html>

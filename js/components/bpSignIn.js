@@ -50,7 +50,7 @@ export function bpSignIn(app) {
        <form data-submit="loginCode">${field('code', 'Sign-in code', { attrs: 'inputmode="numeric" maxlength="6" autocomplete="one-time-code"' })}
         <button type="submit" class="slds-button slds-button_brand slds-button_stretch">Sign in</button></form>
        <div class="slds-m-top_small slds-grid slds-grid_align-spread"><a class="bp-link bp-small" data-act="loginBack">Use a different email</a><a class="bp-link bp-small" data-act="loginResend">Resend code</a></div>
-       <div class="bp-demo"><b>Demo:</b> the email would contain code <code>${esc(stage.code)}</code>.</div>`;
+       <div class="bp-demo bp-demo-code"><b>Demo:</b> the email would contain code <code>${esc(stage.code)}</code>.</div>`;
   return bpAuthLayout(`
     <div class="slds-text-heading_large slds-m-bottom_x-small">${isConsole ? 'ThinkVibes console' : 'Sign in'}</div>
     <p class="bp-muted slds-m-bottom_large">${isConsole ? 'Staff only. Manage join requests, invitations and firms.' : 'Sign in with your work email. No password needed.'}</p>

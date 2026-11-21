@@ -104,8 +104,8 @@ test.describe('Operator console and owner setup', () => {
     await portal.goto('portal/');
     await portal.fill('#email', 'omar@marinagate.example');
     await portal.click('text=Send sign-in code');
-    await expect(portal.locator('.bp-demo')).toContainText('would contain code');
-    const code = (await portal.locator('.bp-demo').first().innerText()).match(/code (\d{6})/)![1];
+    await expect(portal.locator('.bp-demo-code')).toContainText('would contain code');
+    const code = (await portal.locator('.bp-demo-code').innerText()).match(/code (\d{6})/)![1];
     await portal.fill('#code', code);
     await portal.click('button:has-text("Sign in")');
     await expect(portal.locator('.bp-hero')).toContainText('Omar');

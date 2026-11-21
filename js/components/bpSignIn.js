@@ -1,9 +1,9 @@
 // Sign-in with email and a one-time code, for the firm portal and the ThinkVibes console.
 // LWC equivalent: c-bp-login on the site's login page (passwordless login).
 
-import { field, formErrors, readForm, button, avatar, statusBadge, toast } from '../core/ui.js';
+import { field, formErrors, readForm, button, avatar, statusBadge, toast, openModal, closeModal } from '../core/ui.js';
 import { esc } from '../core/util.js';
-import { getState, tabSession } from '../core/store.js';
+import { getState, tabSession, resetAll } from '../core/store.js';
 import { bpAuthLayout } from './bpAuthLayout.js';
 import { requestCode, verifyCode, demoSignIn, demoOperatorSignIn } from '../services/authService.js';
 import { findUserInvite, acceptUserInvite } from '../services/firmService.js';
@@ -17,21 +17,27 @@ const DEMO_PEOPLE = {
 
 function demoPanel(app) {
   const s = getState();
+  const footer = `<div class="slds-m-top_small bp-small bp-muted">Demo data lives in this browser: ${s.firms.length} firms. Other browsers, and normal vs incognito windows, each have their own copy.
+    <a class="bp-link" data-act="resetDemo">Reset demo data</a></div>`;
   if (app === 'console') {
     return `<div class="bp-demo"><b>Demo accounts (ThinkVibes staff):</b><div class="slds-m-top_x-small">${s.operators.map((o) =>
-      `<button type="button" class="slds-button slds-button_neutral slds-m-right_x-small slds-m-bottom_x-small" data-act="demoOperator" data-id="${o.id}">${esc(o.name)} · ${esc(o.role)}</button>`).join('')}</div></div>`;
+      `<button type="button" class="slds-button slds-button_neutral slds-m-right_x-small slds-m-bottom_x-small" data-act="demoOperator" data-id="${o.id}">${esc(o.name)} · ${esc(o.role)}</button>`).join('')}</div>${footer}</div>`;
   }
-  const groups = Object.entries(DEMO_PEOPLE).map(([firmId, ids]) => {
-    const firm = s.firms.find((f) => f.id === firmId);
-    const people = ids.map((id) => s.users.find((u) => u.id === id)).filter(Boolean);
-    return `<div class="slds-m-top_small"><div class="bp-small"><b>${esc(firm.name)}</b> ${statusBadge(firm.status)}</div>${people.map((u) =>
+  // Seed firms show a curated set of personas; firms registered in this browser show their active people.
+  const groups = s.firms.filter((f) => ['Active', 'Trial', 'Suspended'].includes(f.status)).map((firm) => {
+    const curated = DEMO_PEOPLE[firm.id];
+    const people = (curated ? curated.map((id) => s.users.find((u) => u.id === id)) : s.users.filter((u) => u.firmId === firm.id && u.status === 'Active'))
+      .filter((u) => u && u.status === 'Active');
+    if (!people.length) return '';
+    return `<div class="slds-m-top_small"><div class="bp-small"><b>${esc(firm.name)}</b> ${statusBadge(firm.status)}${curated ? '' : ' <span class="bp-muted">registered in this browser</span>'}</div>${people.map((u) =>
       `<button type="button" class="slds-button slds-button_neutral bp-demo-person" data-act="demoUser" data-id="${u.id}">${avatar(u.name, firm.brand, 20)} ${esc(u.name)} <span class="bp-muted">· ${esc(u.role)}</span></button>`).join('')}</div>`;
   }).join('');
+  const blocked = [s.users.find((u) => u.id === 'U-CK-30'), s.users.find((u) => u.id === 'U-OP-1' && u.status === 'Pending')].filter(Boolean);
   return `<div class="bp-demo"><b>Demo accounts.</b> Or type an email above, e.g. <code>sara.khan@crescentkeyrealty.example</code>.
     ${groups}
-    <div class="slds-m-top_small bp-small"><b>Blocked cases:</b>
-      <button type="button" class="slds-button slds-button_neutral bp-demo-person" data-act="demoUser" data-id="U-CK-30">Vikram Rao · old Crescent Key login (deactivated)</button>
-      <button type="button" class="slds-button slds-button_neutral bp-demo-person" data-act="demoUser" data-id="U-OP-1">Tariq Al Amiri · firm under review</button></div></div>`;
+    ${blocked.length ? `<div class="slds-m-top_small bp-small"><b>Blocked cases:</b>
+      ${blocked.map((u) => `<button type="button" class="slds-button slds-button_neutral bp-demo-person" data-act="demoUser" data-id="${u.id}">${u.id === 'U-CK-30' ? 'Vikram Rao · old Crescent Key login (deactivated)' : 'Tariq Al Amiri · firm under review'}</button>`).join('')}</div>` : ''}
+    ${footer}</div>`;
 }
 
 export function bpSignIn(app) {
@@ -128,6 +134,17 @@ export const signInActions = {
       setStage('portal', { step: 'email', errors: err.messages });
       go('');
     }
+  },
+  resetDemo() {
+    openModal('Reset demo data', '<p>All demo data in this browser goes back to the starting point. Firms registered here are removed, and every tab is signed out.</p>',
+      '<button type="button" class="slds-button slds-button_neutral" data-act="closeModal">Cancel</button><button type="button" class="slds-button slds-button_destructive" data-act="confirmResetDemo">Reset</button>');
+  },
+  confirmResetDemo() {
+    closeModal();
+    sessionStorage.clear();
+    resetAll();
+    toast('success', 'Demo data reset', 'Everything is back to the starting point.');
+    go('');
   },
   demoOperator(el) {
     demoOperatorSignIn(el.dataset.id);

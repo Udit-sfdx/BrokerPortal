@@ -140,6 +140,29 @@ test.describe('Operator console and owner setup', () => {
   });
 });
 
+test.describe('Approving the seeded firm', () => {
+  test('approving Oasis Point gives Tariq a login; Omar has none until Marina Gate signs up', async ({ page, context }) => {
+    await page.goto('console/');
+    await page.click('text=Ananya Iyer');
+    await page.click('a:has-text("Verification queue")');
+    await page.click('li:has-text("Oasis Point") >> text=Review');
+    await page.click('button:has-text("Approve")');
+    await page.click('text=Approve and create workspace');
+    await expect(page.locator('#toast-root')).toContainText('tariq.al.amiri@oasispointproperties.example');
+
+    const portal = await context.newPage();
+    await portal.goto('portal/');
+    await portal.fill('#email', 'omar@marinagate.example');
+    await portal.click('text=Send sign-in code');
+    await expect(portal.locator('.bp-auth-panel')).toContainText('No Broker Portal account uses this email');
+    await expect(portal.locator('.bp-demo-hint')).toContainText('finish sign-up');
+    await expect(portal.locator('.bp-demo:not(.bp-demo-hint)')).toContainText('Oasis Point Properties');
+    await portal.fill('#email', 'tariq.al.amiri@oasispointproperties.example');
+    await portal.click('text=Send sign-in code');
+    await expect(portal.locator('.bp-demo-code')).toContainText('would contain code');
+  });
+});
+
 test.describe('Access rules', () => {
   test('a deactivated old login and a firm under review cannot sign in', async ({ page }) => {
     await page.goto('portal/');

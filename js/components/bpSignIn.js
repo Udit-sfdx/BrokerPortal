@@ -54,7 +54,7 @@ export function bpSignIn(app) {
   return bpAuthLayout(`
     <div class="slds-text-heading_large slds-m-bottom_x-small">${isConsole ? 'ThinkVibes console' : 'Sign in'}</div>
     <p class="bp-muted slds-m-bottom_large">${isConsole ? 'Staff only. Manage join requests, invitations and firms.' : 'Sign in with your work email. No password needed.'}</p>
-    ${formErrors(stage.errors)}${body}
+    ${formErrors(stage.errors)}${!isConsole && (stage.errors || []).some((e) => e.startsWith('No Broker Portal account')) ? `<div class="bp-demo bp-demo-hint"><b>Demo:</b> a new firm's owner gets a login only after they finish sign-up on the join page <i>and</i> ThinkVibes approves that firm. Approved firms appear in the demo list below; their owner's email is shown in the console after approval.</div>` : ''}${body}
     ${isConsole ? '' : '<p class="bp-small bp-muted slds-m-top_large">New firm? <a class="bp-link" href="join/">Join Broker Portal</a></p>'}
     ${demoPanel(app)}`, { narrow: true, headline: isConsole ? 'Broker Portal operations' : undefined });
 }

@@ -138,6 +138,9 @@ export function approveFirm(op, firmId) {
     sendEmail(owner.email, `${f.name} is approved`, 'Your workspace is ready. Sign in to finish setting up your firm.', 'portal/');
     audit(opLabel(op), 'Firm approved', `${f.name}: workspace created (${status}).`, f.id);
   });
+  const s = getState();
+  const owner = s.users.find((u) => u.id === firm.ownerId);
+  return { firm: s.firms.find((x) => x.id === firmId), owner };
 }
 
 export function requestInformation(op, firmId, note) {

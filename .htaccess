@@ -1,0 +1,6 @@
+# Hostinger / Apache: keep demo out of search engines and cache static assets.
+Header set X-Robots-Tag "noindex, nofollow"
+<FilesMatch "\.(css|js|svg)$">
+  Header set Cache-Control "public, max-age=3600"
+</FilesMatch>
+DirectoryIndex index.html

@@ -1,6 +1,9 @@
 node_modules/
+build/
 dist/
+assets/vendor/
 test-results/
 playwright-report/
+api/config.php
 .DS_Store
 Thumbs.db

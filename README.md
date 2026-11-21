@@ -1,53 +1,63 @@
-# Broker Portal – workshop prototype
+# Broker Portal · demo website
 
-A clickable prototype of **Broker Portal**, a Salesforce managed package for UAE real estate brokerages, by ThinkVibes. It is used in workshops with pilot broker firms to check the workflow before the real Salesforce build starts.
+A clickable, working website for **Broker Portal**, the ThinkVibes product for UAE brokerages: one portal where every broker firm runs leads, deals, marketing, compliance and commission, each firm's data private to it. It is built the same way as the VibeEstate demo site: plain HTML, CSS and JavaScript, no server code, data kept in the browser. Screens use the Salesforce Lightning Design System and are split into the components (`bp*`) that become LWCs in the Salesforce build.
 
-- **Throwaway by design.** All data is fictional and lives in browser memory. Reloading or clicking **Reset** restores the starting point. Nothing is saved or sent anywhere.
-- **Looks like Lightning.** Built with the Salesforce Lightning Design System, so screens and wording carry over to the LWC build.
-- **One file.** The build produces a single self-contained `dist/index.html` that also works offline.
+All people, firms, licence numbers and figures are fictional.
 
-## What it shows
+## Pages
 
-A workshop script, docked on the right, runs 12 steps in order:
+| Address | What it is |
+|---|---|
+| `/` | Product page |
+| `/join/` | Request to join, sign-up from an invite (documents, verification), registration status |
+| `/portal/` | The firm portal: sign-in, setup wizard, home, people; leads, deals and the rest arrive in later drops |
+| `/console/` | ThinkVibes operator console: join requests, invites, verification queue, firms, email and audit logs |
 
-1. A Property Finder lead is captured with campaign attribution, checked against the DNC registry and routed (the routing trace shows why).
-2. A repeat enquiry is merged on normalised phone, so no duplicate is created.
-3. An agent with an expired BRN is skipped by routing.
-4. SLA breach → escalation to the team leader → automatic re-assignment.
-5. The telemarketing guard blocks calls outside 09:00–18:00 GST, to DNC numbers, and after a same-day refusal.
-6. Qualify and convert: a Contact, an Individual Account and a Deal are created, with optional co-broking.
-7. Document and KYC gates on the drag-and-drop pipeline.
-8. Payment plan with the developer commission threshold, plus a handover checklist.
-9. Commission from expected to paid, feeding campaign ROI.
-10. Manager dashboard: speed to lead, breaches, ageing leads, lost reasons and funnel by channel.
-11. The ad-permit gate on campaigns.
-12. Firm admin setup: routing rules, SLA, stages, commission, agents, emirate rule packs and the Option A/B switch.
+Open them in separate tabs: they share one set of data, and each tab keeps its own signed-in person.
 
-Use **View as** in the header to switch between agent, team leader, sales director, marketing and firm admin. The **demo clock** can be sped up or moved, for example to after 18:00.
+## Demo walkthrough (drop 1)
 
-## Develop
+1. `/join/`, enter invite code `MGR7Q2K` (Marina Gate Realty). Follow the four steps; the SMS code shows in a toast. Any files work as documents.
+2. Submit: the popup calls the document-verification API (a stub that answers "verified").
+3. `/console/`, sign in as Ananya Iyer, open **Verification queue**, review Marina Gate and **Approve**. The applicant's status page updates by itself.
+4. `/portal/`, sign in with `omar@marinagate.example` (the code shows on screen), finish setup and invite the team.
+5. Access rules to try on the portal sign-in page: Vikram Rao's old Crescent Key login is deactivated (he now works at Palm Arc), and Oasis Point Properties is still under review.
 
-Requires Node 20 or later.
+Other invite codes: `HBV2M8D` is expired, `OPP5X9M` is already used.
+
+## Run it locally
+
+Needs Node.js 20 or newer.
 
 ```bash
-npm ci                                # install SLDS and Playwright
-npm run build                         # writes dist/index.html
-npx playwright install chromium       # first time only
-npm test                              # end-to-end tests against dist/index.html
+npm install
+npm start            # builds into build/ and serves it at http://localhost:3000
 ```
 
-Then open `dist/index.html` in a browser. To use an installed Chrome for tests instead of Playwright's Chromium, set `CHROME_PATH`.
+`npm run build` writes the publishable site to `build/` (pages, SLDS styles and icons, scripts).
 
-| Path | What it is |
+## Tests
+
+```bash
+npm run build
+npx playwright install chromium   # first time only
+npm test
+```
+
+## How it is built
+
+| Path | Role |
 |---|---|
-| `src/app.html` | The page: markup, styles and script. `/*__SLDS__*/` and `<!--__ICONS__-->` are filled in by the build. |
-| `scripts/build.mjs` | Inlines the SLDS stylesheet and only the icons used. Fails if a required icon is missing. |
-| `tests/prototype.spec.ts` | Playwright tests covering both the happy path and the failure cases (validation, gates, blocks, access). |
-| `.github/workflows/pages.yml` | On every push: build and test. On `main`: deploy to GitHub Pages. |
+| `js/core/` | Store (browser storage shared across tabs, resets after 8 hours idle), seed data, router and action runtime, SLDS markup helpers |
+| `js/services/` | Business rules, one file per planned Apex service: auth, registration, operator, firm and people |
+| `js/components/` | Screens and parts, one `bp*` component per planned LWC |
+| `js/apps/` | Entry point for each page |
+| `scripts/build.mjs` | Generates the page shells, copies SLDS from npm, writes `build/` |
+| `legacy/workshop-prototype/` | The first single-file workshop prototype, kept for reference |
 
-## Hosting
+## Deploy (Hostinger)
 
-GitHub Pages deploys from GitHub Actions on every push to `main`, but only when the tests pass. The page carries `noindex`, so search engines won't list it while the product is unannounced.
+Connect the GitHub repository, build command `npm run build`, output directory `build`. Point the subdomain (e.g. `brokers.vibeestate.space`) at it with the CNAME record Hostinger shows. The site asks search engines not to index it (`robots.txt`, `noindex`, `X-Robots-Tag`).
 
 ## Licences
 

@@ -1,97 +1,72 @@
-// Builds dist/index.html: one self-contained page with the SLDS stylesheet inlined
-// and only the SLDS icon symbols the page actually references.
-// Usage: node scripts/build.mjs
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+// Builds the static site.
+//   node scripts/build.mjs --pages   regenerate join/, portal/, console/ from the page template
+//   node scripts/build.mjs --vendor  copy SLDS (CSS + icon sprites) into assets/vendor for local use
+//   node scripts/build.mjs           both, then copy the publishable site into build/ (what Hostinger serves)
+import { readFileSync, writeFileSync, mkdirSync, rmSync, cpSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
+const args = new Set(process.argv.slice(2));
 
-const SRC = path.join(root, 'src', 'app.html');
-const OUT_DIR = path.join(root, 'dist');
-const CSS_MARKER = '/*__SLDS__*/';
-const ICON_MARKER = '<!--__ICONS__-->';
-
-// Icons the code builds dynamically (names held in variables), so they can't all be found
-// by pattern alone. The build fails if any of these is missing from the installed SLDS version.
-const REQUIRED = {
-  utility: ['check', 'clock', 'pause', 'play', 'notification', 'refresh', 'download', 'add', 'upload', 'call', 'chat',
-    'change_owner', 'forward', 'close', 'success', 'warning', 'error', 'info', 'arrowup', 'arrowdown', 'knowledge_base',
-    'minimize_window', 'assignment', 'email', 'merge', 'settings', 'ban', 'file', 'moneybag'],
-  standard: ['lead', 'opportunity', 'campaign', 'dashboard', 'task', 'event', 'announcement', 'knowledge', 'contact',
-    'log_a_call', 'assignment', 'disclosure_and_compliance', 'currency', 'budget', 'budget_allocation', 'metrics', 'feed',
-    'people', 'report', 'timesheet', 'queue', 'custom', 'apps', 'flow', 'location', 'call', 'chart'],
+const PAGES = {
+  join: ['Join Broker Portal', 'Request to join or sign up your brokerage with an invitation.'],
+  portal: ['Broker Portal', 'Your firm workspace: leads, deals, marketing, compliance and commission.'],
+  console: ['Broker Portal · ThinkVibes console', 'Internal console for ThinkVibes sales and operations. Staff only.'],
 };
-const PREFIX = { utility: 'u', standard: 's' };
 
 function fail(message) {
   console.error(`build failed: ${message}`);
   process.exit(1);
 }
 
-async function readOrFail(file, what) {
-  try {
-    return await readFile(file, 'utf8');
-  } catch (err) {
-    fail(`could not read ${what} (${file}): ${err.message}. Did you run "npm ci"?`);
+function pages() {
+  const tpl = readFileSync(path.join(root, 'scripts', 'page.template.html'), 'utf8');
+  for (const [app, [title, description]] of Object.entries(PAGES)) {
+    const html = tpl.replaceAll('{{title}}', title).replaceAll('{{description}}', description).replaceAll('{{app}}', app);
+    mkdirSync(path.join(root, app), { recursive: true });
+    writeFileSync(path.join(root, app, 'index.html'), html);
   }
+  console.log('pages: join/, portal/, console/');
 }
 
-function sldsAssets() {
+function vendor() {
+  let slds;
   try {
-    return path.join(path.dirname(require.resolve('@salesforce-ux/design-system/package.json')), 'assets');
+    slds = path.join(path.dirname(require.resolve('@salesforce-ux/design-system/package.json')), 'assets');
   } catch {
-    fail('@salesforce-ux/design-system is not installed. Run "npm ci".');
+    fail('@salesforce-ux/design-system is not installed. Run "npm install".');
   }
-}
-
-// Every identifier-like quoted word or #u-/#s- reference in the source is a candidate icon name.
-function candidateNames(source) {
-  const names = new Set();
-  for (const m of source.matchAll(/['"`#-]([a-z][a-z0-9_]+)['"`]/g)) names.add(m[1]);
-  for (const m of source.matchAll(/#[us]-([a-z0-9_]+)/g)) names.add(m[1]);
-  return names;
-}
-
-function extractSymbols(spriteSvg, names, prefix) {
-  const found = new Map();
-  for (const m of spriteSvg.matchAll(/<symbol\b[^>]*\bid="([^"]+)"[^>]*>[\s\S]*?<\/symbol>/g)) {
-    const id = m[1];
-    if (names.has(id)) found.set(id, m[0].replace(`id="${id}"`, `id="${prefix}-${id}"`));
+  const out = path.join(root, 'assets', 'vendor');
+  rmSync(out, { recursive: true, force: true });
+  mkdirSync(path.join(out, 'icons'), { recursive: true });
+  cpSync(path.join(slds, 'styles', 'salesforce-lightning-design-system.min.css'), path.join(out, 'slds.min.css'));
+  for (const sprite of ['utility-sprite', 'standard-sprite']) {
+    cpSync(path.join(slds, 'icons', sprite), path.join(out, 'icons', sprite), { recursive: true, filter: (p) => !p.endsWith('.png') });
   }
-  return found;
+  console.log('vendor: SLDS css and icon sprites copied to assets/vendor');
 }
 
-async function main() {
-  const source = await readOrFail(SRC, 'page source');
-  if (!source.includes(CSS_MARKER)) fail(`marker ${CSS_MARKER} not found in src/app.html`);
-  if (!source.includes(ICON_MARKER)) fail(`marker ${ICON_MARKER} not found in src/app.html`);
+const PUBLISH = ['index.html', 'robots.txt', '.htaccess', 'join', 'portal', 'console', 'assets', 'js', 'api'];
 
-  const assets = sldsAssets();
-  const css = await readOrFail(path.join(assets, 'styles', 'salesforce-lightning-design-system.min.css'), 'SLDS stylesheet');
-  const names = candidateNames(source);
-
-  const symbols = [];
-  const missing = [];
-  for (const sprite of ['utility', 'standard']) {
-    const svg = await readOrFail(path.join(assets, 'icons', `${sprite}-sprite`, 'svg', 'symbols.svg'), `${sprite} sprite`);
-    const found = extractSymbols(svg, names, PREFIX[sprite]);
-    for (const n of REQUIRED[sprite]) if (!found.has(n)) missing.push(`${sprite}:${n}`);
-    symbols.push(...found.values());
-    console.log(`${sprite} icons: ${found.size}`);
+function build() {
+  const out = path.join(root, 'build');
+  rmSync(out, { recursive: true, force: true });
+  mkdirSync(out);
+  for (const item of PUBLISH) {
+    const src = path.join(root, item);
+    if (!existsSync(src)) continue;
+    cpSync(src, path.join(out, item), { recursive: true, filter: (p) => !p.endsWith('config.php') });
   }
-  if (missing.length) fail(`icons missing from this SLDS version: ${missing.join(', ')}`);
-
-  const sprite = `<svg xmlns="http://www.w3.org/2000/svg" style="display:none">${symbols.join('')}</svg>`;
-  // Function replacers: the CSS contains "$" sequences that a string replacement would interpret.
-  const html = source.replace(CSS_MARKER, () => css).replace(ICON_MARKER, () => sprite);
-
-  await mkdir(OUT_DIR, { recursive: true });
-  await writeFile(path.join(OUT_DIR, 'index.html'), html, 'utf8');
-  await writeFile(path.join(OUT_DIR, '.nojekyll'), '', 'utf8');
-  console.log(`wrote dist/index.html (${Math.round(Buffer.byteLength(html) / 1024)} KB)`);
+  console.log('build: site copied to build/');
 }
 
-main().catch(err => fail(err.stack || String(err)));
+if (args.has('--pages')) pages();
+else if (args.has('--vendor')) vendor();
+else {
+  pages();
+  vendor();
+  build();
+}

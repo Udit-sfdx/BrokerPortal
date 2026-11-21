@@ -24,6 +24,7 @@ async function signUpMarinaGate(page: Page, licence = 'DED-1500321') {
   await expect(body(page)).toContainText('Set up your firm');
   await page.fill('#mobile', '050 771 3390');
   await page.click('text=Send code');
+  await expect(page.locator('#toast-root')).toContainText('Your code is');
   const code = (await page.locator('#toast-root').innerText()).match(/(\d{6})/)![1];
   await page.fill('#mobileCode', code);
   await page.click('button:has-text("Verify")');
@@ -103,7 +104,8 @@ test.describe('Operator console and owner setup', () => {
     await portal.goto('portal/');
     await portal.fill('#email', 'omar@marinagate.example');
     await portal.click('text=Send sign-in code');
-    const code = (await portal.locator('body').innerText()).match(/code (\d{6})/)![1];
+    await expect(portal.locator('.bp-demo')).toContainText('would contain code');
+    const code = (await portal.locator('.bp-demo').first().innerText()).match(/code (\d{6})/)![1];
     await portal.fill('#code', code);
     await portal.click('button:has-text("Sign in")');
     await expect(portal.locator('.bp-hero')).toContainText('Omar');

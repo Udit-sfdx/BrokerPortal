@@ -44,7 +44,7 @@ function vendor() {
   mkdirSync(path.join(out, 'icons'), { recursive: true });
   cpSync(path.join(slds, 'styles', 'salesforce-lightning-design-system.min.css'), path.join(out, 'slds.min.css'));
   for (const sprite of ['utility-sprite', 'standard-sprite']) {
-    cpSync(path.join(slds, 'icons', sprite), path.join(out, 'icons', sprite), { recursive: true, filter: (p) => !p.endsWith('.png') });
+    cpSync(path.join(slds, 'icons', sprite), path.join(out, 'icons', sprite), { recursive: true, filter: (p) => !p.endsWith('.png') && !p.endsWith('-rtl.svg') });
   }
   console.log('vendor: SLDS css and icon sprites copied to assets/vendor');
 }

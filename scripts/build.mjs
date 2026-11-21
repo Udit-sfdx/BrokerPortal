@@ -90,14 +90,7 @@ function stampVersion(out) {
     const next = src.replace(importRe, `$1$2?v=${v}$3`);
     if (next !== src) writeFileSync(f, next);
   }
-  for (const app of ['join', 'portal', 'console']) {
-    const f = path.join(out, app, 'index.html');
-    if (!existsSync(f)) continue;
-    const html = readFileSync(f, 'utf8')
-      .replace(/(js\/apps\/[a-z]+\.js)(?=")/g, `$1?v=${v}`)
-      .replace(/(assets\/bp\.css)(?=")/g, `$1?v=${v}`);
-    writeFileSync(f, html);
-  }
+  writeFileSync(path.join(out, 'version.json'), JSON.stringify({ v }));
   return v;
 }
 

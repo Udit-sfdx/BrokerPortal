@@ -9,13 +9,23 @@
 <meta name="description" content="Request to join or sign up your brokerage with an invitation.">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/vendor/slds.min.css">
-<link rel="stylesheet" href="assets/bp.css">
 </head>
 <body>
 <div id="app"></div>
 <div id="modal-root"></div>
 <div id="toast-root" class="slds-notify_container"></div>
 <noscript>Broker Portal needs JavaScript.</noscript>
-<script type="module" src="js/apps/join.js"></script>
+<script type="module">
+// The HTML may be a cached copy. Ask the server which build is live (never cached), then load
+// exactly that build's stylesheet and modules. No version.json (unbuilt local copy) = load as is.
+let v = '';
+try { v = (await (await fetch('version.json', { cache: 'no-store' })).json()).v || ''; } catch { v = ''; }
+const q = v ? `?v=${v}` : '';
+const css = document.createElement('link');
+css.rel = 'stylesheet';
+css.href = `assets/bp.css${q}`;
+document.head.append(css);
+await import(`./js/apps/join.js${q}`);
+</script>
 </body>
 </html>

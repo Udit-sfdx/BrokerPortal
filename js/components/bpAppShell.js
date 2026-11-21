@@ -9,9 +9,9 @@ import { PLANS } from '../core/config.js';
 /** Portal navigation: which roles see which page, and which drop delivers it. */
 export const PORTAL_NAV = [
   { group: 'Work' },
-  { id: 'home', label: 'Home', icon: 'home', roles: 'all' },
-  { id: 'leads', label: 'Leads', icon: 'lead', roles: ['Owner', 'Director', 'Team Leader', 'Agent'], drop: 2 },
-  { id: 'pipeline', label: 'Pipeline', icon: 'opportunity', roles: ['Owner', 'Director', 'Team Leader', 'Agent'], drop: 2 },
+  { id: 'home', label: 'Home', icon: 'home', roles: 'all', labelFor: { Agent: 'My Day', 'Team Leader': 'My Day' } },
+  { id: 'leads', label: 'Leads', icon: 'lead', roles: ['Owner', 'Director', 'Team Leader', 'Agent'] },
+  { id: 'pipeline', label: 'Pipeline', icon: 'opportunity', roles: ['Owner', 'Director', 'Team Leader', 'Agent', 'Compliance'] },
   { id: 'inventory', label: 'Inventory', icon: 'apps', roles: ['Owner', 'Director', 'Team Leader', 'Agent', 'Marketing'], drop: 3 },
   { group: 'Grow and run' },
   { id: 'campaigns', label: 'Campaigns', icon: 'campaign', roles: ['Owner', 'Director', 'Marketing'], drop: 3, plan: 'marketing' },
@@ -65,7 +65,7 @@ export function bpAppShell({ user, firm, active, body, notifOpen = false, userMe
   const subtitle = consoleMode ? 'ThinkVibes console' : `${esc(PLANS[firm.plan]?.label.split(' · ')[0] || firm.plan)} · ${esc(firm.emirate)}`;
   const navHtml = items.map((n) => n.group
     ? `<li class="bp-nav-group">${esc(n.group)}</li>`
-    : `<li><a href="${consoleMode ? 'console' : 'portal'}/#/${n.id}" class="${active === n.id ? 'is-active' : ''}" ${n.id === 'onboarding' ? 'style="background:rgba(221,122,1,.25)"' : ''}>${uIcon(n.icon, 'slds-icon_x-small')}<span>${esc(n.label)}</span>${n.drop ? `<span class="bp-soon">drop ${n.drop}</span>` : ''}${n.count ? `<span class="bp-soon">${n.count}</span>` : ''}</a></li>`).join('');
+    : `<li><a href="${consoleMode ? 'console' : 'portal'}/#/${n.id}" class="${active === n.id ? 'is-active' : ''}" ${n.id === 'onboarding' ? 'style="background:rgba(221,122,1,.25)"' : ''}>${uIcon(n.icon, 'slds-icon_x-small')}<span>${esc((n.labelFor && n.labelFor[user.role]) || n.label)}</span>${n.drop ? `<span class="bp-soon">drop ${n.drop}</span>` : ''}${n.count ? `<span class="bp-soon">${n.count}</span>` : ''}</a></li>`).join('');
 
   return `<div class="bp-shell ${consoleMode ? 'bp-console' : ''}" style="--bp-brand:${esc(brand)}">
     <aside class="bp-side">

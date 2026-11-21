@@ -3,8 +3,9 @@
 
 import { DAY, HOUR, slug } from './util.js';
 import { defaultFirmSettings } from './config.js';
+import { addDrop2Data } from './seedDrop2.js';
 
-export const SEED_VERSION = 2;
+export const SEED_VERSION = 3;
 
 function makeUser(firm, n, name, role, extra = {}) {
   const first = name.toLowerCase().replace(/[^a-z ]/g, '').split(' ');
@@ -212,7 +213,7 @@ export function buildSeed(t0) {
     { id: 'N-3', userId: 'OP-ALL', text: 'New request to join: Skyline Homes Real Estate.', link: '#/requests', at: ago(2 * HOUR), read: false },
   ];
 
-  return {
+  const state = {
     seq: 2000,
     clockOffset: 0,
     firms,
@@ -229,6 +230,9 @@ export function buildSeed(t0) {
     campaigns: [],
     projects: [],
     activities: [],
+    tasks: [],
+    savedViews: [],
     createdAt: t0,
   };
+  return addDrop2Data(state, t0);
 }

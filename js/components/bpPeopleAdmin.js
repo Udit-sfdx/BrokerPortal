@@ -77,7 +77,7 @@ export function peopleActions(getActor) {
       try {
         const { user, moved } = deactivateUser(getActor(), el.dataset.id, { handTo });
         closeModal();
-        toast('success', `${esc(user.name)} deactivated`, moved ? `${moved} open lead(s) ${handTo === 'routing' ? 're-routed' : 'handed over'}.` : '');
+        toast('success', `${user.name} deactivated`, moved ? `${moved} open lead(s) ${handTo === 'routing' ? 're-routed' : 'handed over'}.` : '');
       } catch (err) {
         if (!err.messages) throw err;
         showModalErrors(err.messages);

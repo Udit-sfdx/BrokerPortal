@@ -3,6 +3,7 @@
 // Data resets after 8 hours without activity, or when the seed version changes.
 
 import { buildSeed, SEED_VERSION } from './seed.js';
+import { addDrop2Data } from './seedDrop2.js';
 
 const KEY = 'bp.state';
 const SESSION_KEY = 'bp.session';
@@ -16,13 +17,23 @@ function readStored() {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (!parsed || parsed.version !== SEED_VERSION) return null;
-    if (Date.now() - (parsed.lastActive || 0) > IDLE_MS) return null;
-    return parsed;
+    if (!parsed || Date.now() - (parsed.lastActive || 0) > IDLE_MS) return null;
+    return upgrade(parsed);
   } catch (err) {
     console.warn('Broker Portal: stored data unreadable, starting fresh.', err);
     return null;
   }
+}
+
+/** Brings data saved by an older drop up to date, keeping firms and people registered in this browser. */
+function upgrade(parsed) {
+  if (parsed.version === SEED_VERSION) return parsed;
+  if (parsed.version === 2) {
+    addDrop2Data(parsed, Date.now());
+    parsed.version = SEED_VERSION;
+    return parsed;
+  }
+  return null;
 }
 
 function fresh() {
@@ -100,8 +111,8 @@ export function sendEmail(to, subject, body, link = null) {
 window.addEventListener('storage', (event) => {
   if (event.key !== KEY || !event.newValue) return;
   try {
-    const parsed = JSON.parse(event.newValue);
-    if (parsed && parsed.version === SEED_VERSION) {
+    const parsed = upgrade(JSON.parse(event.newValue));
+    if (parsed) {
       state = parsed;
       notify();
     }

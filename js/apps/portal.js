@@ -1,26 +1,45 @@
-// Firm portal: sign-in, invitation accept, shell and pages. Pages for drops 2–4 show what's coming.
+// Firm portal: sign-in, invitation accept, shell and pages.
+// Drop 2: My Day (agents and team leaders), Leads inbox, Lead workspace, Pipeline, Deal room.
+// Pages for drops 3–4 show what's coming.
 
 import { createApp, currentRoute, go } from '../core/app.js';
-import { getState, mutate, tabSession } from '../core/store.js';
+import { getState, mutate, tabSession, now, subscribe } from '../core/store.js';
 import { card, comingSoon, toast } from '../core/ui.js';
+import { esc } from '../core/util.js';
+import { slaState } from '../core/rules.js';
 import { currentUser, signOut } from '../services/authService.js';
 import { firmOf } from '../services/firmService.js';
+import { visibleLeads, maybeAutoArrive, leadOwnerName } from '../services/leadService.js';
 import { bpAppShell, navFor } from '../components/bpAppShell.js';
 import { bpSignIn, bpAcceptInvite, signInActions } from '../components/bpSignIn.js';
 import { bpHome } from '../components/bpHome.js';
+import { bpMyDay } from '../components/bpMyDay.js';
+import { bpLeadInbox, inboxActions } from '../components/bpLeadInbox.js';
+import { bpLeadWorkspace, workspaceActions } from '../components/bpLeadWorkspace.js';
+import { bpPipelineBoard, boardActions, wireBoardDragAndDrop } from '../components/bpPipelineBoard.js';
+import { bpDealRoom, dealRoomActions } from '../components/bpDealRoom.js';
+import { quickCaptureActions } from '../components/bpQuickCapture.js';
+import { callGuardActions } from '../components/bpCallGuard.js';
+import { composerActions } from '../components/bpMessageComposer.js';
+import { convertActions } from '../components/bpConvertModal.js';
+import { startSlaTicker } from '../components/bpLeadBits.js';
 import { bpPeopleAdmin, peopleActions } from '../components/bpPeopleAdmin.js';
 import { bpOnboardingWizard, onboardingActions } from '../components/bpOnboardingWizard.js';
 
 const COMING = {
-  leads: ['Leads', 2, ['Live inbox of portal, Meta and WhatsApp leads', 'Routing trace and SLA countdowns', 'Duplicate and DNC badges', 'Bulk assign and saved views']],
-  pipeline: ['Pipeline', 2, ['Boards for off-plan, secondary and rental', 'Drag and drop with document and KYC gates', 'Deal room with payment plan, handover and commission']],
-  inventory: ['Inventory', 3, ['Projects, units, availability and payment plans', 'Unit matching for leads']],
+  inventory: ['Inventory', 3, ['Projects, units, availability and payment plans', 'Unit matching for leads: send a match in two clicks']],
   campaigns: ['Campaigns', 3, ['Campaigns with ad permits (Trakheesi)', 'Spend by channel and creative', 'ROI on commission received']],
   team: ['Team performance', 3, ['Leaderboard, speed to lead, SLA breaches', 'Re-assign queue and coaching notes']],
   commission: ['Commission', 3, ['Expected to paid pipeline with VAT', 'Developer ageing, invoices and agent payouts']],
   compliance: ['Compliance', 3, ['KYC queue and REAR/goAML tasks', 'Licence and permit expiries, audit log']],
   settings: ['Firm settings', 3, ['Routing rules, SLAs and pipelines', 'Commission rates, templates and integrations', 'Plan and billing']],
 };
+
+/** Detail routes and the nav page they belong to (for access and highlighting). */
+const DETAIL_ROUTES = { lead: 'leads', deal: 'pipeline' };
+const MY_DAY_ROLES = ['Agent', 'Team Leader'];
+const AUTO_ARRIVAL_MS = 2 * 60 * 1000;
+const MAX_AUTO_ARRIVALS_PER_TAB = 15;
 
 const ui = { notifOpen: false, userMenuOpen: false };
 const actor = () => currentUser();
@@ -31,17 +50,26 @@ function render() {
   const user = currentUser();
   if (!user) return bpSignIn('portal');
   const firm = firmOf(user);
-  const allowed = navFor(user, firm).filter((n) => !n.group).map((n) => n.id);
-  const page = allowed.includes(name) ? name : 'home';
+  const nav = navFor(user, firm);
+  const allowed = nav.filter((n) => !n.group).map((n) => n.id);
+  const navPage = DETAIL_ROUTES[name] || name;
+  const page = allowed.includes(navPage) ? name : 'home';
   let body;
-  if (page === 'home') body = bpHome(user);
+  if (page === 'home') body = MY_DAY_ROLES.includes(user.role) ? bpMyDay(user) : bpHome(user);
+  else if (page === 'leads') body = bpLeadInbox(user, params);
+  else if (page === 'lead') body = bpLeadWorkspace(user, params[0]);
+  else if (page === 'pipeline') body = bpPipelineBoard(user);
+  else if (page === 'deal') body = bpDealRoom(user, params[0], params[1]);
   else if (page === 'people') body = bpPeopleAdmin(user);
   else if (page === 'onboarding') body = bpOnboardingWizard(user);
   else {
     const [title, drop, bullets] = COMING[page];
     body = card(title, comingSoon(title, drop, bullets));
   }
-  return bpAppShell({ user, firm, active: page, body, notifOpen: ui.notifOpen, userMenuOpen: ui.userMenuOpen });
+  const t = now();
+  const waiting = visibleLeads(user).filter((l) => slaState(l, t).state === 'running' || slaState(l, t).state === 'breached').length;
+  const navWithCounts = nav.map((n) => (n.id === 'leads' && waiting ? { ...n, count: waiting } : n));
+  return bpAppShell({ user, firm, active: DETAIL_ROUTES[page] || page, body, notifOpen: ui.notifOpen, userMenuOpen: ui.userMenuOpen, nav: navWithCounts });
 }
 
 const shellActions = {
@@ -70,6 +98,8 @@ const shellActions = {
     signOut('portal');
     ui.userMenuOpen = false;
     tabSession.set('onboard', null);
+    tabSession.set('inbox', null);
+    tabSession.set('board', null);
     go('');
   },
   openSearch() {
@@ -89,8 +119,50 @@ document.addEventListener('click', (e) => {
   }
 });
 
+const refresh = () => app.refresh();
+
 const app = createApp({
   mount: 'app',
   render,
-  actions: { ...signInActions, ...shellActions, ...peopleActions(actor), ...onboardingActions(actor) },
+  actions: {
+    ...signInActions, ...shellActions, ...peopleActions(actor), ...onboardingActions(actor),
+    ...quickCaptureActions(actor), ...inboxActions(actor, refresh), ...workspaceActions(actor), ...callGuardActions(actor),
+    ...composerActions(actor), ...convertActions(actor), ...boardActions(actor, refresh), ...dealRoomActions(actor),
+  },
 });
+
+wireBoardDragAndDrop(actor);
+startSlaTicker(now);
+
+/* ---------- live lead feed ---------- */
+
+// Leads routed to me that arrived since this tab opened (in this tab or another): toast them once.
+const seen = new Set(getState().leads.map((l) => l.id));
+subscribe(() => {
+  const user = currentUser();
+  if (!user) return;
+  for (const l of getState().leads) {
+    if (seen.has(l.id)) continue;
+    seen.add(l.id);
+    if (l.firmId !== user.firmId) continue;
+    if (l.ownerId === user.id) toast('info', `New lead: ${l.name}`, `${esc(l.source)} · ${esc(l.interest)}. <a href="portal/#/lead/${esc(l.id)}">Open</a>`);
+    else if (!l.ownerId && ['Owner', 'Team Leader'].includes(user.role)) toast('warning', `Unassigned lead: ${l.name}`, 'No eligible agent. Assign it from the inbox.');
+  }
+});
+
+// While the inbox or My Day is open, a new enquiry arrives every couple of minutes (shared across tabs).
+let autoCount = 0;
+setInterval(() => {
+  const user = currentUser();
+  const { name } = currentRoute('home');
+  if (!user || document.hidden || autoCount >= MAX_AUTO_ARRIVALS_PER_TAB || !['leads', 'home'].includes(name)) return;
+  try {
+    const lead = maybeAutoArrive(user, AUTO_ARRIVAL_MS);
+    if (lead) {
+      autoCount++;
+      if (lead.ownerId !== user.id && name === 'leads') toast('info', `New ${lead.source} lead`, `${esc(lead.name)} → ${esc(leadOwnerName(lead))}`);
+    }
+  } catch (err) {
+    console.warn('Broker Portal: automatic lead arrival skipped.', err);
+  }
+}, 15000);

@@ -1,5 +1,5 @@
-// Home (drop 1 version): firm snapshot, setup progress, licence expiries, team and recent activity.
-// Drop 2 replaces the agent view with My Day (priorities, SLA timers, tasks).
+// Home for owners, directors, marketing and compliance: firm snapshot, leads and pipeline, setup progress,
+// licence expiries, team and recent activity. Agents and team leaders get My Day instead (bpMyDay).
 // LWC equivalent: c-bp-home composed of c-bp-stat-tile, c-bp-firm-card and c-bp-activity-list.
 
 import { card, uIcon, badge, avatar } from '../core/ui.js';
@@ -7,6 +7,10 @@ import { esc, fmtDate, fmtAgo, DAY } from '../core/util.js';
 import { getState, now } from '../core/store.js';
 import { PLANS } from '../core/config.js';
 import { firmOf, visibleUsers, seatsUsed } from '../services/firmService.js';
+import { visibleLeads, isOpenLead } from '../services/leadService.js';
+import { visibleDeals } from '../services/dealService.js';
+import { slaState, dealRisks, cashNeedsReport } from '../core/rules.js';
+import { fmtAED, fmtDuration } from '../core/util.js';
 
 function tile(label, value, sub = '', cls = '') {
   return `<div class="bp-tile ${cls}"><div class="bp-tile-label">${esc(label)}</div><div class="bp-tile-value">${value}</div><div class="bp-tile-sub">${sub}</div></div>`;
@@ -28,6 +32,13 @@ export function bpHome(user) {
   const steps = [['Brand and teams', firm.teams.length > 0], ['Team invited', people.length > 1], ['Lead sources connected', g.propertyFinder || g.bayut], ['First lead received', g.firstLead]];
   const done = steps.filter((s) => s[1]).length;
   const recent = getState().audit.filter((a) => a.firmId === firm.id).slice(0, 6);
+  const leads = visibleLeads(user);
+  const leads24 = leads.filter((l) => t - l.createdAt < DAY);
+  const late = leads.filter((l) => slaState(l, t).state === 'breached').length;
+  const deals = visibleDeals(user);
+  const openDeals = deals.filter((d) => !['Won', 'Lost'].includes(d.stage));
+  const replied = leads.filter((l) => l.firstResponseAt && t - l.createdAt < 7 * DAY);
+  const avgReply = replied.length ? replied.reduce((n, l) => n + (l.firstResponseAt - l.createdAt), 0) / replied.length : null;
   const hour = new Date(t + 4 * 3600e3).getUTCHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
@@ -39,7 +50,7 @@ export function bpHome(user) {
     ${tile('Seats used', `${seatsUsed(firm.id)} / ${firm.seats}`, 'active and invited')}
     ${tile('Setup', `${done} / ${steps.length}`, done === steps.length ? 'all done' : 'steps complete', done === steps.length ? 'good' : 'warn')}
     ${tile('Licences needing action', String(brnIssues.length), 'BRNs expired or expiring in 30 days', brnIssues.length ? 'bad' : 'good')}
-    ${tile('Leads today', '—', 'arrives in drop 2')}
+    ${tile('Leads in the last 24 hours', String(leads24.length), `${late} past the first-reply SLA`, late ? 'bad' : 'good')}
   </div>`;
 
   const setup = card('Getting live', `<ul class="bp-list">${steps.map(([label, ok]) => `<li>${ok ? `<span class="slds-badge slds-theme_success">${uIcon('check', 'slds-icon_xx-small')}</span>` : '<span class="slds-badge">To do</span>'}<span>${esc(label)}</span></li>`).join('')}</ul>`, { icon: 'task' });
@@ -52,9 +63,20 @@ export function bpHome(user) {
 
   const activity = card('Recent activity', recent.length ? `<ul class="bp-list">${recent.map((a) => `<li><span style="flex:1"><b>${esc(a.action)}</b><div class="bp-small bp-muted">${esc(a.detail)}</div></span><span class="bp-small bp-muted">${fmtAgo(a.at, t)}</span></li>`).join('')}</ul>` : '<div class="bp-empty">No activity yet.</div>', { icon: 'feed' });
 
-  const next = card('Coming next', `<p class="bp-small bp-muted slds-m-bottom_small">Drop 2 adds My Day, leads, pipeline and the deal room.</p>
-    <ul class="slds-list_dotted bp-small"><li>Live lead inbox with routing and SLA timers</li><li>Lead workspace with calls, WhatsApp and AI suggestions</li><li>Drag-and-drop pipeline with document gates</li></ul>`, { icon: 'einstein_replies' });
+  const pipe = deals.length || leads.length ? card('Leads and pipeline', `<ul class="bp-list">
+      <li><span style="flex:1">Open leads</span><b>${leads.filter(isOpenLead).length}</b><a class="bp-link bp-small" href="portal/#/leads">Inbox →</a></li>
+      <li><span style="flex:1">Average first reply (7 days)</span><b>${avgReply === null ? '—' : fmtDuration(avgReply)}</b><span class="bp-small bp-muted">SLA ${firm.settings.sla.firstResponseMin} min</span></li>
+      <li><span style="flex:1">Open deals</span><b>${openDeals.length} · ${fmtAED(openDeals.reduce((n, d) => n + d.value, 0))}</b><a class="bp-link bp-small" href="portal/#/pipeline">Pipeline →</a></li>
+      <li><span style="flex:1">Deals at risk</span><b class="${openDeals.some((d) => dealRisks(d, t).length) ? 'bp-risk' : ''}">${openDeals.filter((d) => dealRisks(d, t).length).length}</b><span class="bp-small bp-muted">Deal Coach</span></li>
+    </ul>`, { icon: 'opportunity' }) : '';
 
-  return `${hero}${tiles}<div class="bp-grid bp-cols-2"><div class="bp-grid">${team}${activity}</div><div class="bp-grid">${firm.setupComplete ? '' : setup}${licences}${next}</div></div>`;
+  const queue = deals.filter((d) => d.kyc.status === 'Submitted' || d.kyc.screening.status === 'Possible match' || (cashNeedsReport(d) && !d.rearDrafted));
+  const compliance = user.role === 'Compliance' || user.role === 'Owner' ? card('Waiting for Compliance', queue.length ? `<ul class="bp-list">${queue.map((d) => `<li><span style="flex:1"><a class="bp-link" href="portal/#/deal/${esc(d.id)}/kyc"><b>${esc(d.clientName)}</b></a><div class="bp-small bp-muted">${esc(d.id)} · ${esc(d.type)}</div></span>
+      ${d.kyc.screening.status === 'Possible match' ? badge('Screening match', 'error') : d.kyc.status === 'Submitted' ? badge('KYC to verify', 'warning') : badge('REAR needed', 'warning')}</li>`).join('')}</ul>` : '<div class="bp-empty">Nothing waiting.</div>', { icon: 'approval' }) : '';
+
+  const next = card('Coming next', `<p class="bp-small bp-muted slds-m-bottom_small">Drop 3 adds the rest of the firm's tools.</p>
+    <ul class="slds-list_dotted bp-small"><li>Inventory with unit matching</li><li>Campaign studio with ad permits and ROI</li><li>Team performance, commission ledger and compliance centre</li><li>Firm settings: routing, SLAs, pipelines and templates</li></ul>`, { icon: 'einstein_replies' });
+
+  return `${hero}${tiles}<div class="bp-grid bp-cols-2"><div class="bp-grid">${compliance}${pipe}${team}${activity}</div><div class="bp-grid">${firm.setupComplete ? '' : setup}${licences}${next}</div></div>`;
 }
 

@@ -101,32 +101,32 @@ export const alertBox = (kind, html) => {
 
 const req = (required) => (required ? '<abbr class="slds-required" title="required">* </abbr>' : '');
 
-export function field(id, label, { value = '', type = 'text', required = false, attrs = '', help = '', error = '' } = {}) {
+export function field(id, label, { value = '', type = 'text', required = false, attrs = '', help = '', error = '', name = id } = {}) {
   return `<div class="slds-form-element ${error ? 'slds-has-error' : ''} slds-m-bottom_small">
     <label class="slds-form-element__label" for="${id}">${req(required)}${esc(label)}</label>
-    <div class="slds-form-element__control"><input class="slds-input" id="${id}" name="${id}" type="${type}" value="${esc(value)}" ${attrs}></div>
+    <div class="slds-form-element__control"><input class="slds-input" id="${id}" name="${name}" type="${type}" value="${esc(value)}" ${attrs}></div>
     ${help ? `<div class="slds-form-element__help bp-help">${esc(help)}</div>` : ''}
     ${error ? `<div class="slds-form-element__help">${esc(error)}</div>` : ''}
   </div>`;
 }
 
-export function textarea(id, label, { value = '', required = false, attrs = '' } = {}) {
+export function textarea(id, label, { value = '', required = false, attrs = '', name = id } = {}) {
   return `<div class="slds-form-element slds-m-bottom_small"><label class="slds-form-element__label" for="${id}">${req(required)}${esc(label)}</label>
-    <div class="slds-form-element__control"><textarea class="slds-textarea" id="${id}" name="${id}" ${attrs}>${esc(value)}</textarea></div></div>`;
+    <div class="slds-form-element__control"><textarea class="slds-textarea" id="${id}" name="${name}" ${attrs}>${esc(value)}</textarea></div></div>`;
 }
 
-export function select(id, label, options, { value = '', required = false, attrs = '' } = {}) {
+export function select(id, label, options, { value = '', required = false, attrs = '', name = id } = {}) {
   const opts = options.map((o) => {
     const [v, t] = Array.isArray(o) ? o : [o, o];
     return `<option value="${esc(v)}" ${String(v) === String(value) ? 'selected' : ''}>${esc(t)}</option>`;
   }).join('');
   return `<div class="slds-form-element slds-m-bottom_small"><label class="slds-form-element__label" for="${id}">${req(required)}${esc(label)}</label>
-    <div class="slds-form-element__control"><div class="slds-select_container"><select class="slds-select" id="${id}" name="${id}" ${attrs}>${opts}</select></div></div></div>`;
+    <div class="slds-form-element__control"><div class="slds-select_container"><select class="slds-select" id="${id}" name="${name}" ${attrs}>${opts}</select></div></div></div>`;
 }
 
-export function checkbox(id, label, { checked = false, attrs = '' } = {}) {
+export function checkbox(id, label, { checked = false, attrs = '', name = id } = {}) {
   return `<div class="slds-form-element slds-m-bottom_x-small"><div class="slds-form-element__control"><div class="slds-checkbox">
-    <input type="checkbox" id="${id}" name="${id}" ${checked ? 'checked' : ''} ${attrs}>
+    <input type="checkbox" id="${id}" name="${name}" ${checked ? 'checked' : ''} ${attrs}>
     <label class="slds-checkbox__label" for="${id}"><span class="slds-checkbox_faux"></span><span class="slds-form-element__label">${label}</span></label>
   </div></div></div>`;
 }

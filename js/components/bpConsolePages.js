@@ -270,7 +270,7 @@ export function consoleActions(getOp) {
     doApprove(el) {
       modalSubmit(() => {
         const { firm, owner } = approveFirm(getOp(), el.dataset.id);
-        toast('success', `${esc(firm.name)} approved`, `${esc(owner.name)} can now sign in to the portal with <b>${esc(owner.email)}</b>.`);
+        toast('success', `${firm.name} approved`, `${esc(owner.name)} can now sign in to the portal with <b>${esc(owner.email)}</b>.`);
       });
     },
     askInfo(el) {

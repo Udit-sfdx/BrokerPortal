@@ -10,7 +10,7 @@ All people, firms, licence numbers and figures are fictional.
 |---|---|
 | `/` | Product page |
 | `/join/` | Request to join, sign-up from an invite (documents, verification), registration status |
-| `/portal/` | The firm portal: sign-in, setup wizard, home, people; leads, deals and the rest arrive in later drops |
+| `/portal/` | The firm portal: sign-in, setup wizard, home and My Day, leads inbox and workspace, pipeline and deal room, people. Inventory, campaigns, team performance, commission, compliance and settings arrive in drop 3 |
 | `/console/` | ThinkVibes operator console: join requests, invites, verification queue, firms, email and audit logs |
 
 Open them in separate tabs: they share one set of data, and each tab keeps its own signed-in person.
@@ -24,6 +24,18 @@ Open them in separate tabs: they share one set of data, and each tab keeps its o
 5. Access rules to try on the portal sign-in page: Vikram Rao's old Crescent Key login is deactivated (he now works at Palm Arc), and Oasis Point Properties is still under review.
 
 Other invite codes: `HBV2M8D` is expired, `OPP5X9M` is already used.
+
+## Demo walkthrough (drop 2: leads and deals)
+
+Sign in on `/portal/` from the demo list.
+
+1. **My Day** as Sara Khan (agent): the morning brief, her next 3 actions, live SLA timers, today's viewings and the deal the Deal Coach flags. **Quick capture** adds a walk-in that stays with her.
+2. **Leads**: open the inbox in two tabs and press **Simulate portal lead** in one: the lead is routed in under a second and appears in the other tab without a refresh. Hover a score for the Lead Qualifier's reasons, or an owner for the routing trace. Dmitri Volkov (expired BRN) never receives leads.
+3. **Lead workspace**: send a WhatsApp in Arabic from a template, log a call (blocked for do-not-call numbers and outside 09:00–18:00 GST; the blocked dialog has a demo-only switch for evening demos), let the Lead Qualifier fill the missing fields, mark qualified and convert, with co-broking if you like.
+4. **Pipeline**: drag a deal from EOI to Booking. The drop is refused, and the dialog lists exactly which document, KYC step or payment is missing, with a link to fix each.
+5. **Deal room**: upload a passport (put `mismatch` or `expired` in the file name to see those checks), confirm the Document Reader's fields, submit KYC. Then sign in as Huda Karim (Compliance) in another tab to screen and verify it, record the booking deposit, and the move goes through.
+6. **Compliance**: run screening on Viktor Brankovich's deal (Crescent Key, secondary): a possible watchlist match blocks it until Compliance clears it, and his AED 120,000 cash deposit asks for a REAR draft.
+7. **Privacy**: as Faisal Noor (Palm Arc), search a Crescent Key client's phone: nothing. The same client enquired at both firms; neither firm sees a duplicate warning.
 
 ## Run it locally
 
@@ -48,8 +60,9 @@ npm test
 
 | Path | Role |
 |---|---|
-| `js/core/` | Store (browser storage shared across tabs, resets after 8 hours idle), seed data, router and action runtime, SLDS markup helpers |
-| `js/services/` | Business rules, one file per planned Apex service: auth, registration, operator, firm and people |
+| `js/core/` | Store (browser storage shared across tabs, resets after 8 hours idle, upgrades data saved by an earlier drop), seed data, router and action runtime, SLDS markup helpers |
+| `js/core/rules.js` | Pure business rules shared by the seed and services: routing, lead score, SLA, stage gates, deal risk, commission, screening |
+| `js/services/` | Business rules, one file per planned Apex service: auth, registration, operator, firm and people, leads and tasks, deals, and the scripted AI agents (`aiService`) |
 | `js/components/` | Screens and parts, one `bp*` component per planned LWC |
 | `js/apps/` | Entry point for each page |
 | `scripts/build.mjs` | Generates the page shells, copies SLDS from npm, writes `build/` |

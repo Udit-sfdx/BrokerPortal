@@ -2,7 +2,8 @@
 //   node scripts/build.mjs --pages   regenerate join/, portal/, console/ from the page template
 //   node scripts/build.mjs --vendor  copy SLDS (CSS + icon sprites) into assets/vendor for local use
 //   node scripts/build.mjs           both, then copy the publishable site into build/ (what Hostinger serves)
-import { readFileSync, writeFileSync, mkdirSync, rmSync, cpSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, rmSync, cpSync, existsSync, readdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -60,7 +61,44 @@ function build() {
     if (!existsSync(src)) continue;
     cpSync(src, path.join(out, item), { recursive: true, filter: (p) => !p.endsWith('config.php') });
   }
-  console.log('build: site copied to build/');
+  const version = stampVersion(out);
+  console.log(`build: site copied to build/ (version ${version})`);
+}
+
+// Browsers keep GitHub Pages / Hostinger files for up to 10 minutes. Without a version on every
+// URL, a deploy can leave a browser running a mix of old and new modules. We stamp ?v=<content hash>
+// on the app entry, the stylesheet and every relative module import, so one deploy = one consistent set.
+function listFiles(dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    const p = path.join(dir, e.name);
+    return e.isDirectory() ? listFiles(p) : [p];
+  });
+}
+
+function stampVersion(out) {
+  const jsFiles = listFiles(path.join(out, 'js')).filter((f) => f.endsWith('.js')).sort();
+  const hash = createHash('sha256');
+  for (const f of [...jsFiles, path.join(out, 'assets', 'bp.css')]) {
+    if (!existsSync(f)) continue;
+    hash.update(path.relative(out, f));
+    hash.update(readFileSync(f));
+  }
+  const v = hash.digest('hex').slice(0, 10);
+  const importRe = /((?:from|import)\s*\(?\s*['"])(\.{1,2}\/[^'"?]+\.js)(['"])/g;
+  for (const f of jsFiles) {
+    const src = readFileSync(f, 'utf8');
+    const next = src.replace(importRe, `$1$2?v=${v}$3`);
+    if (next !== src) writeFileSync(f, next);
+  }
+  for (const app of ['join', 'portal', 'console']) {
+    const f = path.join(out, app, 'index.html');
+    if (!existsSync(f)) continue;
+    const html = readFileSync(f, 'utf8')
+      .replace(/(js\/apps\/[a-z]+\.js)(?=")/g, `$1?v=${v}`)
+      .replace(/(assets\/bp\.css)(?=")/g, `$1?v=${v}`);
+    writeFileSync(f, html);
+  }
+  return v;
 }
 
 if (args.has('--pages')) pages();

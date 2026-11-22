@@ -7,6 +7,7 @@
 <title>Broker Portal by ThinkVibes</title>
 <meta name="description" content="One portal for UAE brokerages: leads, deals, marketing, compliance and commission, with AI built in.">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<script>try{var t=localStorage.getItem("bp.theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;}catch(e){}</script>
 <link rel="stylesheet" href="assets/vendor/slds.min.css">
 <link rel="stylesheet" href="assets/bp.css">
 <style>
@@ -48,7 +49,7 @@
 </head>
 <body>
 <section class="lp-hero">
-  <nav class="lp-nav"><div class="bp-brandmark"><span class="bp-logo">BP</span><span>Broker Portal</span></div><span style="margin-left:auto"></span><a href="#roles">Product</a><a href="#ai">AI</a><a href="#privacy">Privacy</a><a href="#demo">Try the demo</a><a href="join/">Join</a><a href="portal/">Sign in</a></nav>
+  <nav class="lp-nav"><div class="bp-brandmark"><span class="bp-logo">BP</span><span>Broker Portal</span></div><span style="margin-left:auto"></span><a href="#roles">Product</a><a href="#ai">AI</a><a href="#privacy">Privacy</a><a href="#demo">Try the demo</a><a href="join/">Join</a><a href="portal/">Sign in</a><button type="button" class="lp-theme" id="lp-theme" aria-label="Switch theme">◐</button></nav>
   <h1>Run your whole brokerage from one portal</h1>
   <p>For UAE real estate firms: every lead, deal, campaign, licence and commission in one place, with AI agents that do the busy work and compliance built into each step.</p>
   <div class="lp-cta"><a class="slds-button slds-button_brand" href="join/">Request to join</a><a class="slds-button slds-button_neutral" href="portal/">Sign in to your firm</a></div>
@@ -119,5 +120,15 @@
   </ol>
 </section>
 <footer class="lp-foot">Broker Portal by ThinkVibes · demonstration site · all people, firms and figures are fictional · not affiliated with Salesforce.</footer>
+<script>
+document.getElementById('lp-theme').addEventListener('click', function () {
+  var order = ['light', 'dark', 'system'], cur = localStorage.getItem('bp.theme') || 'system';
+  var next = order[(order.indexOf(cur) + 1) % 3];
+  if (next === 'system') localStorage.removeItem('bp.theme'); else localStorage.setItem('bp.theme', next);
+  var t = next === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : next;
+  document.documentElement.dataset.theme = t; document.documentElement.style.colorScheme = t;
+  this.title = 'Theme: ' + next;
+});
+</script>
 </body>
 </html>

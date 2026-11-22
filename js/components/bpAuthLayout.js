@@ -3,6 +3,7 @@
 
 import { uIcon } from '../core/ui.js';
 import { esc } from '../core/util.js';
+import { themeToggle } from '../core/theme.js';
 
 const DEFAULT_POINTS = [
   'Every portal lead captured, routed and followed up in minutes',
@@ -20,6 +21,6 @@ export function bpAuthLayout(content, { headline, sub, points = DEFAULT_POINTS, 
       <ul>${points.map((p) => `<li>${uIcon('check', 'slds-icon_x-small')}<span>${esc(p)}</span></li>`).join('')}</ul>
       <div class="bp-auth-foot">A ThinkVibes product · demonstration environment · all data is fictional</div>
     </aside>
-    <main class="bp-auth-body"><div class="bp-auth-panel ${narrow ? 'narrow' : ''}">${content}</div></main>
+    <main class="bp-auth-body"><div class="bp-auth-theme">${themeToggle()}</div><div class="bp-auth-panel ${narrow ? 'narrow' : ''}">${content}</div></main>
   </div>`;
 }

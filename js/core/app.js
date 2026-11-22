@@ -5,6 +5,7 @@
 import { subscribe } from './store.js';
 import { closeModal, modalOpen, toast } from './ui.js';
 import { ValidationError, esc } from './util.js';
+import { initTheme, applyTheme } from './theme.js';
 
 /** Current route as { name, params }: "#/deal/D-1/payments" → { name: 'deal', params: ['D-1', 'payments'] }. */
 export function currentRoute(fallback) {
@@ -25,6 +26,7 @@ export function go(path) {
  * Errors thrown by actions are shown as toasts (ValidationError messages are listed).
  */
 export function createApp({ mount, render, actions, afterRender }) {
+  initTheme();
   const root = document.getElementById(mount);
   let pending = false;
 
@@ -37,6 +39,7 @@ export function createApp({ mount, render, actions, afterRender }) {
     pending = false;
     const scrollY = window.scrollY;
     root.innerHTML = render();
+    applyTheme();
     if (afterRender) afterRender(root);
     window.scrollTo(0, scrollY);
   }

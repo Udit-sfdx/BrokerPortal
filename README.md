@@ -53,11 +53,11 @@ Sign in on `/portal/` from the demo list.
 
 ## Copilot model (optional)
 
-The Copilot works everywhere with its built-in engine (questions about leads, deals, follow-ups, pipeline, commission, KYC; re-assigning; refusing other firms). On Hostinger, `api/copilot.php` also sends free-form questions to Claude, with only the asking user's own records as context:
+The Copilot works everywhere with its built-in engine (questions about leads, deals, follow-ups, pipeline, commission, KYC; re-assigning; refusing other firms). Optionally, if the site is ever served from a PHP host, `api/copilot.php` also sends free-form questions to Claude, with only the asking user's own records as context:
 
 1. Copy `api/config.example.php` to `api/config.php` on the server (never commit it; it is in `.gitignore`), add the API key and the site's origin.
 2. `api/.htaccess` blocks direct access to the config files. The proxy accepts same-origin requests only and allows 20 questions a minute per visitor.
-3. GitHub Pages cannot run PHP, so there the Copilot stays on the built-in engine.
+3. The live site is on GitHub Pages, which cannot run PHP, so the Copilot uses the built-in engine there. Nothing needs configuring.
 
 ## Run it locally
 
@@ -90,9 +90,9 @@ npm test
 | `scripts/build.mjs` | Generates the page shells, copies SLDS from npm, writes `build/` |
 | `legacy/workshop-prototype/` | The first single-file workshop prototype, kept for reference |
 
-## Deploy (Hostinger)
+## Deploy
 
-Connect the GitHub repository, build command `npm run build`, output directory `build` (it includes `api/`; add `api/config.php` by hand for the Copilot model). Point the subdomain (e.g. `brokers.vibeestate.space`) at it with the CNAME record Hostinger shows. The site asks search engines not to index it (`robots.txt`, `noindex`, `X-Robots-Tag`).
+The site is hosted on **GitHub Pages**: https://udit-sfdx.github.io/BrokerPortal/. Every push to `main` runs `.github/workflows/pages.yml` (install, build, all Playwright tests, then publish `build/`); a failing test stops the deploy. Each build is stamped with a content version so browsers never mix cached old files with new ones. The site asks search engines not to index it (`robots.txt`, `noindex`).
 
 ## Licences
 

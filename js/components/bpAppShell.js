@@ -5,6 +5,7 @@ import { uIcon, bIconOnly, avatar } from '../core/ui.js';
 import { esc, initials, fmtDate, fmtAgo, DAY } from '../core/util.js';
 import { getState, now } from '../core/store.js';
 import { PLANS } from '../core/config.js';
+import { themeToggle } from '../core/theme.js';
 
 /** Portal navigation: which roles see which page, and which drop delivers it. */
 export const PORTAL_NAV = [
@@ -88,6 +89,7 @@ export function bpAppShell({ user, firm, active, body, notifOpen = false, userMe
         <div class="bp-search" data-act="openSearch" role="button" tabindex="0">${uIcon('search', 'slds-icon_x-small')}<span>Search ${consoleMode ? 'firms and requests' : 'leads, deals, people'}…</span><kbd>Ctrl K</kbd></div>
         <div class="bp-top-right">
           ${consoleMode ? '' : `<button type="button" class="slds-button ${copilot ? 'slds-button_brand' : 'slds-button_neutral'} bp-copilot-btn" data-act="toggleCopilot" aria-pressed="${!!copilot}">${uIcon('sparkles', 'slds-icon_x-small')}&nbsp;Copilot</button>`}
+          ${themeToggle()}
           <div class="bp-rel">
             <button type="button" class="slds-button slds-button_icon slds-button_icon-border-filled" title="Notifications" data-act="toggleNotifications">${bIconOnly('notification')}</button>
             ${unread ? `<span class="bp-count">${unread}</span>` : ''}

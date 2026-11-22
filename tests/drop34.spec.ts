@@ -250,3 +250,29 @@ test('operator sees health and churn risk from counts only', async ({ page }) =>
   const someLead = s.leads.find((l: any) => l.firmId === 'F-CK');
   await expect(main(page)).not.toContainText(someLead.name);
 });
+
+test('light and dark mode: follows the device, toggles light → dark → system, and is remembered', async ({ browser }) => {
+  const ctx = await browser.newContext({ colorScheme: 'dark' });
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => errors.push(`theme: ${e.message}`));
+  await page.goto('portal/');
+  await page.waitForSelector('#email');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  expect(await bg()).toBe('rgb(16, 22, 29)');
+  await signIn(page, 'U-CK-10');
+  const btn = page.locator('.bp-top [data-theme-toggle]');
+  await btn.click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  expect(await bg()).not.toBe('rgb(16, 22, 29)');
+  await btn.click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.goto('');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.goto('portal/');
+  await page.locator('.bp-top [data-theme-toggle]').click();
+  expect(await page.evaluate(() => localStorage.getItem('bp.theme'))).toBeNull();
+  await ctx.close();
+});

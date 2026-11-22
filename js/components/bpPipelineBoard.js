@@ -44,7 +44,7 @@ export function bpPipelineBoard(user) {
   const typesInUse = DEAL_TYPES.filter((ty) => all.some((d) => d.type === ty));
   const type = DEAL_TYPES.includes(f.type) ? f.type : typesInUse[0] || DEAL_TYPES[0];
   const deals = all.filter((d) => d.type === type && (!f.owner || d.ownerId === f.owner) && (!f.risk || dealRisks(d, t).length));
-  const stages = [...stagesFor(type), { id: 'Lost', label: 'Lost' }];
+  const stages = [...stagesFor(type, user.firmId), { id: 'Lost', label: 'Lost' }];
   const owners = MANAGERS.includes(user.role) || user.role === 'Compliance' ? getState().users.filter((u) => all.some((d) => d.ownerId === u.id)) : [];
   const open = deals.filter((d) => !['Won', 'Lost'].includes(d.stage));
   const atRisk = open.filter((d) => dealRisks(d, t).length).length;
@@ -109,7 +109,7 @@ export function tryMove(actor, dealId, toStage) {
 }
 
 function openMoveMenu(actor, deal) {
-  const options = [...stagesFor(deal.type), { id: 'Lost', label: 'Lost' }].filter((s) => s.id !== deal.stage);
+  const options = [...stagesFor(deal.type, deal.firmId), { id: 'Lost', label: 'Lost' }].filter((s) => s.id !== deal.stage);
   openModal(`Move ${esc(deal.clientName)}`, modalForm('mv-form', 'submitMoveDeal', `<input type="hidden" name="dealId" value="${esc(deal.id)}">
     ${select('mvTo', 'Move to', options.map((s) => [s.id, `${s.label}${stageIndex(deal.type, s.id) < stageIndex(deal.type, deal.stage) && s.id !== 'Lost' ? ' (back)' : ''}`]), { name: 'to' })}
     <p class="bp-small bp-muted">Gates are checked before the move.</p>`), modalFooter('mv-form', 'Move'));

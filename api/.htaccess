@@ -1,0 +1,5 @@
+# Only the proxy is reachable; config files are never served.
+<FilesMatch "^(config|config\.example)\.php$">
+  Require all denied
+</FilesMatch>
+Options -Indexes

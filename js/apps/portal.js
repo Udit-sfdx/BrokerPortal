@@ -4,7 +4,7 @@
 
 import { createApp, currentRoute, go } from '../core/app.js';
 import { getState, mutate, tabSession, now, subscribe } from '../core/store.js';
-import { card, comingSoon, toast } from '../core/ui.js';
+import { card, toast } from '../core/ui.js';
 import { esc } from '../core/util.js';
 import { slaState } from '../core/rules.js';
 import { currentUser, signOut } from '../services/authService.js';
@@ -25,15 +25,17 @@ import { convertActions } from '../components/bpConvertModal.js';
 import { startSlaTicker } from '../components/bpLeadBits.js';
 import { bpPeopleAdmin, peopleActions } from '../components/bpPeopleAdmin.js';
 import { bpOnboardingWizard, onboardingActions } from '../components/bpOnboardingWizard.js';
+import { bpInventoryBrowser, inventoryActions } from '../components/bpInventoryBrowser.js';
+import { bpCampaignStudio, campaignActions } from '../components/bpCampaignStudio.js';
+import { bpTeamPerformance, teamActions } from '../components/bpTeamPerformance.js';
+import { bpCommissionLedger, ledgerActions } from '../components/bpCommissionLedger.js';
+import { bpComplianceCenter, complianceActions } from '../components/bpComplianceCenter.js';
+import { bpFirmSettings, settingsActions } from '../components/bpFirmSettings.js';
+import { bpCopilotPanel, copilotActions, copilotAfterRender } from '../components/bpCopilotPanel.js';
+import { paletteActions } from '../components/bpCommandPalette.js';
+import { fmtDateTime, fmtDuration } from '../core/util.js';
 
-const COMING = {
-  inventory: ['Inventory', 3, ['Projects, units, availability and payment plans', 'Unit matching for leads: send a match in two clicks']],
-  campaigns: ['Campaigns', 3, ['Campaigns with ad permits (Trakheesi)', 'Spend by channel and creative', 'ROI on commission received']],
-  team: ['Team performance', 3, ['Leaderboard, speed to lead, SLA breaches', 'Re-assign queue and coaching notes']],
-  commission: ['Commission', 3, ['Expected to paid pipeline with VAT', 'Developer ageing, invoices and agent payouts']],
-  compliance: ['Compliance', 3, ['KYC queue and REAR/goAML tasks', 'Licence and permit expiries, audit log']],
-  settings: ['Firm settings', 3, ['Routing rules, SLAs and pipelines', 'Commission rates, templates and integrations', 'Plan and billing']],
-};
+
 
 /** Detail routes and the nav page they belong to (for access and highlighting). */
 const DETAIL_ROUTES = { lead: 'leads', deal: 'pipeline' };
@@ -41,7 +43,8 @@ const MY_DAY_ROLES = ['Agent', 'Team Leader'];
 const AUTO_ARRIVAL_MS = 2 * 60 * 1000;
 const MAX_AUTO_ARRIVALS_PER_TAB = 15;
 
-const ui = { notifOpen: false, userMenuOpen: false };
+const ui = { notifOpen: false, userMenuOpen: false, menuOpen: false };
+const copilotOpen = () => !!tabSession.get('copilotOpen', false);
 const actor = () => currentUser();
 
 function render() {
@@ -62,14 +65,22 @@ function render() {
   else if (page === 'deal') body = bpDealRoom(user, params[0], params[1]);
   else if (page === 'people') body = bpPeopleAdmin(user);
   else if (page === 'onboarding') body = bpOnboardingWizard(user);
-  else {
-    const [title, drop, bullets] = COMING[page];
-    body = card(title, comingSoon(title, drop, bullets));
-  }
+  else if (page === 'inventory') body = bpInventoryBrowser(user, params);
+  else if (page === 'campaigns') body = bpCampaignStudio(user, params);
+  else if (page === 'team') body = bpTeamPerformance(user);
+  else if (page === 'commission') body = bpCommissionLedger(user);
+  else if (page === 'compliance') body = bpComplianceCenter(user);
+  else if (page === 'settings') body = bpFirmSettings(user, params);
+  else body = card('Not found', 'This page does not exist.');
   const t = now();
   const waiting = visibleLeads(user).filter((l) => slaState(l, t).state === 'running' || slaState(l, t).state === 'breached').length;
   const navWithCounts = nav.map((n) => (n.id === 'leads' && waiting ? { ...n, count: waiting } : n));
-  return bpAppShell({ user, firm, active: DETAIL_ROUTES[page] || page, body, notifOpen: ui.notifOpen, userMenuOpen: ui.userMenuOpen, nav: navWithCounts });
+  const offset = getState().clockOffset || 0;
+  const demo = { clock: fmtDateTime(t), offset: offset ? `${offset > 0 ? '+' : '−'}${fmtDuration(Math.abs(offset))}` : '' };
+  return bpAppShell({
+    user, firm, active: DETAIL_ROUTES[page] || page, body, notifOpen: ui.notifOpen, userMenuOpen: ui.userMenuOpen, nav: navWithCounts,
+    copilot: copilotOpen() ? bpCopilotPanel(user) : '', menuOpen: ui.menuOpen, demo,
+  });
 }
 
 const shellActions = {
@@ -102,11 +113,22 @@ const shellActions = {
     tabSession.set('board', null);
     go('');
   },
-  openSearch() {
-    toast('info', 'Search arrives in drop 4', 'Ctrl+K will search leads, deals, people and actions.');
+  toggleCopilot() {
+    tabSession.set('copilotOpen', !copilotOpen());
+    app.refresh();
+    if (copilotOpen()) setTimeout(() => document.getElementById('copilot-q')?.focus(), 0);
   },
-  openCopilot() {
-    toast('info', 'Copilot arrives in drop 4', 'Ask questions and run actions in plain words.');
+  toggleMenu() { ui.menuOpen = !ui.menuOpen; app.refresh(); },
+  /** Demo only: moves the demo clock so SLAs, follow-ups and expiries can be shown moving. */
+  demoClock(el) {
+    const h = Number(el.dataset.h);
+    mutate((s) => { s.clockOffset = h === 0 ? 0 : (s.clockOffset || 0) + h * 3600e3; });
+    toast('info', h === 0 ? 'Demo clock back to real time' : `Demo clock moved ${h === 24 ? 'one day' : 'one hour'} ahead`);
+  },
+  switchPersona() {
+    signOut('portal');
+    ui.userMenuOpen = false;
+    go('');
   },
 };
 
@@ -120,16 +142,35 @@ document.addEventListener('click', (e) => {
 });
 
 const refresh = () => app.refresh();
+const allowedPages = () => { const u = currentUser(); return u ? navFor(u, firmOf(u)).filter((n) => !n.group).map((n) => n.id) : []; };
+/** Runs an app action by name (from the command palette), with the same error toasts as a click. */
+function runNamedAction(name) {
+  try {
+    appActions[name]?.(document.body);
+  } catch (err) {
+    toast('error', 'Could not do that', esc(err.messages ? err.messages.join(' ') : err.message));
+  }
+}
 
-const app = createApp({
-  mount: 'app',
-  render,
-  actions: {
+const appActions = {
     ...signInActions, ...shellActions, ...peopleActions(actor), ...onboardingActions(actor),
     ...quickCaptureActions(actor), ...inboxActions(actor, refresh), ...workspaceActions(actor), ...callGuardActions(actor),
     ...composerActions(actor), ...convertActions(actor), ...boardActions(actor, refresh), ...dealRoomActions(actor),
-  },
+    ...inventoryActions(actor, refresh), ...campaignActions(actor), ...teamActions(actor, refresh), ...ledgerActions(actor, refresh),
+    ...complianceActions(actor, refresh), ...settingsActions(actor, refresh), ...copilotActions(actor, refresh),
+    ...paletteActions(actor, allowedPages, (name) => runNamedAction(name)),
+};
+
+const app = createApp({ mount: 'app', render, actions: appActions, afterRender: copilotAfterRender });
+
+// Ctrl+K / Cmd+K opens the command palette from anywhere in the portal.
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && currentUser()) {
+    e.preventDefault();
+    appActions.openSearch();
+  }
 });
+window.addEventListener('hashchange', () => { if (ui.menuOpen) { ui.menuOpen = false; app.refresh(); } });
 
 wireBoardDragAndDrop(actor);
 startSlaTicker(now);

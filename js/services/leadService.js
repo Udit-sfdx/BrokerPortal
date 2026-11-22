@@ -497,12 +497,12 @@ export function convertLead(actor, id, form) {
     const t = now();
     const deal = {
       id: nextId('D'), firmId: l.firmId, leadId: l.id, clientName: l.name, clientPhone: l.phone, clientEmail: l.email, nationality: l.nationality,
-      type: form.type, stage: stagesFor(form.type)[0].id, value: Math.round(value), ownerId: l.ownerId || actor.id, createdAt: t, stageChangedAt: t,
+      type: form.type, stage: stagesFor(form.type, l.firmId)[0].id, value: Math.round(value), ownerId: l.ownerId || actor.id, createdAt: t, stageChangedAt: t,
       closedAt: null, lostReason: null,
       unit: { project: form.type === 'Off-plan' ? l.project : null, developer: null, area: l.area, beds: l.beds, ref: form.unitRef.trim(), sizeSqft: null },
       documents: {}, kyc: { status: 'Not started', fields: {}, submittedAt: null, verifiedAt: null, verifiedBy: null, screening: { status: 'Not run', at: null, hits: [], clearedBy: null } },
-      payments: buildPayments(form.type, value, t), handover: buildHandover(form.type), coBroke, commission: newCommission(form.type),
-      cashAmount: 0, rearDrafted: false, history: [{ at: t, from: null, to: stagesFor(form.type)[0].id, by: actor.name }],
+      payments: buildPayments(form.type, value, t), handover: buildHandover(form.type), coBroke, commission: newCommission(form.type, s.firms.find((f) => f.id === l.firmId).settings.commission),
+      cashAmount: 0, rearDrafted: false, history: [{ at: t, from: null, to: stagesFor(form.type, l.firmId)[0].id, by: actor.name }],
     };
     scheduleNextPayments(deal);
     s.deals.push(deal);
@@ -541,8 +541,14 @@ export function deleteView(actor, viewId) {
 
 /* ---------- helpers for the UI ---------- */
 
-export const templateText = (templateId, lang, lead, actor) => fillTemplate(templateId, lang, { lead, agent: actor, firm: firmOf(actor) });
+export const templateText = (templateId, lang, lead, actor, extra = {}) => fillTemplate(templateId, lang, { lead, agent: actor, firm: firmOf(actor), ...extra });
 
 export const leadOwnerName = (lead) => (lead.ownerId ? getState().users.find((u) => u.id === lead.ownerId)?.name || 'Unknown' : 'Unassigned');
 
 export const _test = { gstHour, routingContext };
+
+/** Records a blocked call attempt (do-not-call or hours) for the Compliance centre. */
+export function recordBlockedCall(actor, lead, problems) {
+  if (!lead || !problems.length) return;
+  mutate(() => audit(actor.name, 'Call blocked', `${lead.name} (${lead.id}): ${problems[0]}`, actor.firmId));
+}

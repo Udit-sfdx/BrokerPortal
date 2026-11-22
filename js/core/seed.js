@@ -4,8 +4,9 @@
 import { DAY, HOUR, slug } from './util.js';
 import { defaultFirmSettings } from './config.js';
 import { addDrop2Data } from './seedDrop2.js';
+import { addDrop3Data } from './seedDrop3.js';
 
-export const SEED_VERSION = 3;
+export const SEED_VERSION = 4;
 
 function makeUser(firm, n, name, role, extra = {}) {
   const first = name.toLowerCase().replace(/[^a-z ]/g, '').split(' ');
@@ -234,5 +235,5 @@ export function buildSeed(t0) {
     savedViews: [],
     createdAt: t0,
   };
-  return addDrop2Data(state, t0);
+  return addDrop3Data(addDrop2Data(state, t0), t0);
 }

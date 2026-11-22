@@ -206,6 +206,8 @@ export function changePlan(op, firmId, plan, seats) {
   if (!['Active', 'Trial'].includes(firm.status)) problems.push(`Plans can't change while the firm is ${firm.status.toLowerCase()}.`);
   assertValid(problems);
   mutate((s) => {
+    const fx = s.firms.find((x) => x.id === firmId);
+    if (fx) fx.planRequest = null;
     const f = s.firms.find((x) => x.id === firmId);
     f.plan = plan;
     f.seats = n;
@@ -248,4 +250,32 @@ export function firmUsage(firmId) {
 
 export function markNotificationsRead(audience) {
   mutate((s) => s.notifications.forEach((n) => { if (n.userId === audience) n.read = true; }));
+}
+
+/**
+ * Health and churn risk from aggregates only (no lead, deal or client records leave the firm).
+ * Scripted "usage and churn-risk summary" for the operator.
+ */
+export function firmHealth(firmId) {
+  const s = getState();
+  const t = now();
+  const f = s.firms.find((x) => x.id === firmId);
+  const u = firmUsage(firmId);
+  const leads = s.leads.filter((l) => l.firmId === firmId);
+  const leads7 = leads.filter((l) => t - l.createdAt < 7 * DAY).length;
+  const replied = leads.filter((l) => t - l.createdAt < 30 * DAY && l.firstResponseAt);
+  const slaPct = replied.length ? Math.round((replied.filter((l) => l.firstResponseAt <= l.slaDueAt).length / replied.length) * 100) : null;
+  const seatPct = f.seats ? Math.round(((u.active + u.invited) / f.seats) * 100) : 0;
+  // Last activity: a sign-in, or any action by the firm's people (counted, never shown).
+  const firmUsers = new Set(s.users.filter((x) => x.firmId === firmId).map((x) => x.name));
+  const lastAct = Math.max(u.lastSignIn || 0, ...leads.flatMap((l) => (l.activities || []).filter((a) => firmUsers.has(a.by)).map((a) => a.at)).slice(-500), 0);
+  const idleDays = lastAct ? Math.floor((t - lastAct) / DAY) : null;
+  const reasons = [];
+  if (idleDays === null || idleDays > 7) reasons.push(idleDays === null ? 'No activity yet' : `No activity for ${idleDays} days`);
+  if (['Active', 'Trial'].includes(f.status) && leads7 === 0) reasons.push('No leads in the last 7 days: check their portal integrations');
+  if (seatPct < 40) reasons.push(`Only ${seatPct}% of seats in use`);
+  if (slaPct !== null && slaPct < 60) reasons.push(`First replies within SLA: ${slaPct}%`);
+  if (f.status === 'Trial' && f.trialEndsAt && f.trialEndsAt - t < 5 * DAY) reasons.push('Trial ends within 5 days');
+  const risk = !['Active', 'Trial'].includes(f.status) ? 'n/a' : reasons.length >= 3 ? 'High' : reasons.length ? 'Medium' : 'Low';
+  return { leads7, slaPct, seatPct, idleDays, risk, reasons };
 }

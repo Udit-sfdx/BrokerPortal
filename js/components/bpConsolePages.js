@@ -9,7 +9,7 @@ import { getState, now, tabSession } from '../core/store.js';
 import { EMIRATES, PLANS, FIELD_LABELS, FIRM_DOCUMENTS } from '../core/config.js';
 import {
   inviteState, createInvite, resendInvite, revokeInvite, acceptRequest, declineRequest, approveFirm, requestInformation,
-  rejectFirm, suspendFirm, reactivateFirm, changePlan, offboardFirm, firmUsage,
+  rejectFirm, suspendFirm, reactivateFirm, changePlan, offboardFirm, firmUsage, firmHealth,
 } from '../services/operatorService.js';
 import { reviewDueAt } from '../services/registrationService.js';
 import { go } from '../core/app.js';
@@ -154,6 +154,11 @@ export function bpFirmDetail(firmId) {
       ${card('Usage (counts only)', `<dl class="bp-kv"><dt>Active users</dt><dd>${usage.active}</dd><dt>Invited</dt><dd>${usage.invited}</dd><dt>Deactivated</dt><dd>${usage.deactivated}</dd>
         <dt>Leads</dt><dd>${usage.leads}</dd><dt>Deals</dt><dd>${usage.deals}</dd><dt>Last sign-in</dt><dd>${fmtDateTime(usage.lastSignIn)}</dd></dl>
         <div class="bp-privacy slds-m-top_small">${uIcon('lock', 'slds-icon_x-small')}<span>Support access: ${f.loginAccessGranted ? 'granted by the firm' : 'not granted'}. Lead, deal and client records are never shown here.</span></div>`, { icon: 'metrics' })}
+      ${(() => { const h = firmHealth(f.id); return card('Health and churn risk', `<p>${badge(`Churn risk: ${h.risk}`, h.risk === 'High' ? 'error' : h.risk === 'Medium' ? 'warning' : h.risk === 'Low' ? 'success' : 'light')}</p>
+        <dl class="bp-kv slds-m-top_small"><dt>Leads, last 7 days</dt><dd>${h.leads7}</dd><dt>Replies within SLA</dt><dd>${h.slaPct === null ? '—' : `${h.slaPct}%`}</dd><dt>Seats in use</dt><dd>${h.seatPct}%</dd></dl>
+        ${h.reasons.length ? `<ul class="slds-list_dotted bp-small slds-m-top_small">${h.reasons.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>` : '<p class="bp-small slds-m-top_small">Healthy: signing in, receiving leads and replying on time.</p>'}
+        <p class="bp-small bp-muted slds-m-top_x-small">${uIcon('sparkles', 'slds-icon_xx-small')} Summary from counts only.</p>
+        ${f.planRequest ? `<div class="slds-m-top_small">${badge('Plan change requested', 'warning')} <span class="bp-small">${esc(PLANS[f.planRequest.plan]?.label || f.planRequest.plan)}, ${f.planRequest.seats} seats, by ${esc(f.planRequest.by)}${f.planRequest.note ? `: ${esc(f.planRequest.note)}` : ''}. Use Change plan to apply it.</span></div>` : ''}`, { icon: 'metrics' }); })()}
       ${card('Status history', `<ul class="bp-list">${f.statusHistory.slice().reverse().map((h) => `<li><span style="flex:1">${statusBadge(h.status)}${h.note ? `<div class="bp-small bp-muted">${esc(h.note)}</div>` : ''}</span><span class="bp-small bp-muted">${esc(h.by)}<br>${fmtDateTime(h.at)}</span></li>`).join('')}</ul>`, { icon: 'timesheet' })}
     </div></div>`;
 }

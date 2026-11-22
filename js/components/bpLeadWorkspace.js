@@ -19,6 +19,7 @@ import { go } from '../core/app.js';
 import { slaTimer, scoreChip, leadFlags, leadStatusBadge, timeline } from './bpLeadBits.js';
 import { modalForm, modalFooter, submitModal } from './bpModalForm.js';
 import { openComposer } from './bpMessageComposer.js';
+import { matchList } from './bpInventoryBrowser.js';
 
 const MANAGERS = ['Owner', 'Director', 'Team Leader'];
 const aiTag = (label) => `<span class="bp-ai-tag">${uIcon('sparkles', 'slds-icon_xx-small')} ${esc(label)}</span>`;
@@ -133,7 +134,7 @@ export function bpLeadWorkspace(user, id) {
   return `${header(user, lead, t, canWork)}
     <div class="bp-grid bp-cols-2">
       <div class="bp-grid">${aiCard(user, lead, t, canWork)}${timelineCard(lead, t, canWork)}</div>
-      <div class="bp-grid">${needsCard(lead, canWork)}${tasksCard(user, lead, t, canWork)}${slaCard(user, lead, t)}${profileCard(lead, canWork)}</div>
+      <div class="bp-grid">${needsCard(lead, canWork)}${isOpenLead(lead) ? card('Matching units', matchList(user, lead, { compact: true }), { icon: 'home', actions: '<a class="bp-link bp-small" href="portal/#/inventory">Inventory →</a>' }) : ''}${tasksCard(user, lead, t, canWork)}${slaCard(user, lead, t)}${profileCard(lead, canWork)}</div>
     </div>`;
 }
 

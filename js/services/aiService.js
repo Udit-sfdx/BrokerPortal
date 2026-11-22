@@ -17,14 +17,22 @@ export function interestArabic(lead) {
 }
 
 /** Fills a template's placeholders. Unknown values fall back to neutral words, never "undefined". */
-export function fillTemplate(templateId, lang, { lead, agent, firm, when = '' }) {
-  const tpl = MESSAGE_TEMPLATES.find((t) => t.id === templateId) || MESSAGE_TEMPLATES[0];
+/** The firm's templates: product defaults with the firm's own edits (Firm settings → Templates). */
+export function firmTemplates(firm) {
+  const own = (firm && firm.settings.templates) || {};
+  return MESSAGE_TEMPLATES.map((t) => ({ ...t, ...(own[t.id] || {}) })).filter((t) => t.enabled !== false);
+}
+
+export function fillTemplate(templateId, lang, { lead, agent, firm, when = '', unit = '', price = '' }) {
+  const list = firmTemplates(firm);
+  const tpl = list.find((t) => t.id === templateId) || list[0] || MESSAGE_TEMPLATES[0];
   const arabic = lang === 'Arabic';
   const text = (arabic ? tpl.ar : tpl.en) || tpl.en;
   const values = {
     first: first(lead.name), agent: agent ? first(agent.name) : '', firm: firm ? firm.name : '',
     interest: arabic ? interestArabic(lead) : lead.interest || 'your property search',
     when: when || (arabic ? 'في الموعد المتفق عليه' : 'the agreed time'),
+    unit: unit || lead.interest || '', price: price || '',
   };
   return text.replace(/\{(\w+)\}/g, (_, k) => values[k] ?? '');
 }

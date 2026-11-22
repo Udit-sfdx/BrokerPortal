@@ -1,13 +1,25 @@
 // Firm workspace: setup wizard, people (invite, accept, deactivate), and role-based scoping.
 // Mirrors: BP_FirmService and BP_UserService (Apex), with Customer Community Plus users.
 
-import { getState, mutate, now, nextId, audit, sendEmail } from '../core/store.js';
+import { getState, peekState, mutate, now, nextId, audit, sendEmail } from '../core/store.js';
 import { DAY, isEmail, isBlank, slug, passwordProblems, assertValid, parseDateInput } from '../core/util.js';
 import { BRAND_COLOURS, LANGUAGES, LINES_OF_BUSINESS, FIRM_WIDE_ROLES } from '../core/config.js';
 
 const sameText = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
 const ASSIGNABLE_ROLES = ['Director', 'Team Leader', 'Agent', 'Marketing', 'Compliance'];
 const LICENSED_ROLES = ['Team Leader', 'Agent'];
+
+import { setPipelineResolver } from '../core/rules.js';
+import { PIPELINES, LOCKED_GATES, MESSAGE_TEMPLATES, INTEGRATIONS, PLANS } from '../core/config.js';
+
+// Firm settings override stage gates and stuck limits per firm (Firm settings → Pipelines). No code change needed.
+setPipelineResolver((firmId, type) => {
+  const st = peekState();
+  const firm = st && st.firms.find((f) => f.id === firmId);
+  const o = firm && firm.settings.gates && firm.settings.gates[type];
+  if (!o) return null;
+  return PIPELINES[type].map((st) => (o[st.id] ? { ...st, gate: o[st.id].gate ?? st.gate, stuckDays: o[st.id].stuckDays ?? st.stuckDays } : st));
+});
 
 export const firmOf = (user) => (user ? getState().firms.find((f) => f.id === user.firmId) || null : null);
 export const isAdmin = (user) => !!user && user.role === 'Owner';
@@ -253,3 +265,154 @@ export function deactivateUser(actor, userId, { handTo = 'routing' } = {}) {
 }
 
 export const brandColours = BRAND_COLOURS;
+
+/* ---------- drop 3: firm settings (every rule changes behaviour without code) ---------- */
+
+/** Calling hours for the call guard (GST). */
+export function saveCallWindow(actor, { start, end }) {
+  const firm = requireAdmin(actor);
+  const a = Number(start);
+  const b = Number(end);
+  const problems = [];
+  if (!Number.isInteger(a) || !Number.isInteger(b) || a < 7 || b > 21 || a >= b) problems.push('Calling hours must be between 07:00 and 21:00, start before end.');
+  assertValid(problems);
+  mutate((s) => {
+    const f = s.firms.find((x) => x.id === firm.id);
+    f.settings.callWindow = { start: a, end: b };
+    audit(actor.name, 'Calling hours updated', `${a}:00–${b}:00 GST.`, f.id);
+  });
+}
+
+/** Moves a soft routing rule up or down (the licence rule always runs first). */
+export function moveRoutingRule(actor, ruleId, dir) {
+  const firm = requireAdmin(actor);
+  const list = firm.settings.routing;
+  const i = list.findIndex((r) => r.id === ruleId);
+  const j = i + (dir === 'up' ? -1 : 1);
+  assertValid(i < 0 || list[i].hard ? ['This rule cannot be moved.'] : j < 0 || j >= list.length || list[j].hard ? ['Already at the limit.'] : []);
+  mutate((s) => {
+    const r = s.firms.find((x) => x.id === firm.id).settings.routing;
+    [r[i], r[j]] = [r[j], r[i]];
+    audit(actor.name, 'Routing order changed', r.map((x) => x.label).join(' → '), firm.id);
+  });
+}
+
+/** Stage gates and stuck limits per deal type. KYC and screening cannot be removed (regulation). */
+export function saveGates(actor, type, stageId, { gate, stuckDays }) {
+  const firm = requireAdmin(actor);
+  const base = PIPELINES[type] && PIPELINES[type].find((s) => s.id === stageId);
+  const problems = [];
+  if (!base) problems.push('Unknown stage.');
+  const days = stuckDays === '' || stuckDays === undefined ? undefined : Number(stuckDays);
+  if (days !== undefined && (!Number.isInteger(days) || days < 1 || days > 120)) problems.push('Stuck limit must be 1 to 120 days.');
+  const locked = (base?.gate || []).filter((g) => LOCKED_GATES.includes(g));
+  const missingLocked = locked.filter((g) => !(gate || []).includes(g));
+  if (missingLocked.length) problems.push('KYC and screening gates are required by regulation and cannot be switched off.');
+  assertValid(problems);
+  mutate((s) => {
+    const f = s.firms.find((x) => x.id === firm.id);
+    f.settings.gates[type] = f.settings.gates[type] || {};
+    f.settings.gates[type][stageId] = { gate: [...gate], ...(days !== undefined ? { stuckDays: days } : {}) };
+    audit(actor.name, 'Stage gate changed', `${type} → ${base.label}: ${gate.join(', ') || 'no gate'}${days !== undefined ? `; stuck after ${days} days` : ''}.`, f.id);
+  });
+}
+
+export function resetGates(actor, type) {
+  const firm = requireAdmin(actor);
+  mutate((s) => {
+    const f = s.firms.find((x) => x.id === firm.id);
+    delete f.settings.gates[type];
+    audit(actor.name, 'Stage gates reset', `${type} back to the product default.`, f.id);
+  });
+}
+
+/** Default commission per deal type for new deals. */
+export function saveCommissionDefaults(actor, type, { rate, agentShare }) {
+  const firm = requireAdmin(actor);
+  const r = Number(rate);
+  const a = Number(agentShare);
+  const problems = [];
+  if (!PIPELINES[type]) problems.push('Unknown deal type.');
+  if (!Number.isFinite(r) || r <= 0 || r > 10) problems.push('Rate must be above 0% and at most 10%.');
+  if (!Number.isFinite(a) || a < 0 || a > 100) problems.push("Agent's share must be 0 to 100%.");
+  assertValid(problems);
+  mutate((s) => {
+    const f = s.firms.find((x) => x.id === firm.id);
+    f.settings.commission[type] = { rate: r, agentShare: a };
+    audit(actor.name, 'Commission defaults', `${type}: ${r}% (agent ${a}%).`, f.id);
+  });
+}
+
+/** Edits a message template. Placeholders in braces must be ones the product knows. */
+export function saveTemplate(actor, id, { en, ar, enabled }) {
+  const firm = requireAdmin(actor);
+  const known = ['first', 'agent', 'firm', 'interest', 'when', 'unit', 'price'];
+  const problems = [];
+  if (!MESSAGE_TEMPLATES.some((t) => t.id === id)) problems.push('Unknown template.');
+  for (const [lang, text] of [['English', en], ['Arabic', ar]]) {
+    if (isBlank(text)) problems.push(`${lang} text is required.`);
+    else if (text.length > 600) problems.push(`${lang} text must be under 600 characters.`);
+    const bad = (String(text || '').match(/\{(\w+)\}/g) || []).map((x) => x.slice(1, -1)).filter((x) => !known.includes(x));
+    if (bad.length) problems.push(`${lang}: unknown placeholder ${bad.map((b) => `{${b}}`).join(', ')}. Use ${known.map((k) => `{${k}}`).join(' ')}.`);
+  }
+  assertValid(problems);
+  mutate((s) => {
+    const f = s.firms.find((x) => x.id === firm.id);
+    f.settings.templates[id] = { en: en.trim(), ar: ar.trim(), enabled: enabled !== false };
+    audit(actor.name, 'Template updated', id, f.id);
+  });
+}
+
+export function setIntegration(actor, key, on) {
+  const firm = requireAdmin(actor);
+  const def = INTEGRATIONS.find((i) => i.key === key);
+  const problems = [];
+  if (!def) problems.push('Unknown integration.');
+  else if (def.plan === 'marketing' && on && !PLANS[firm.plan].marketing) problems.push(`${def.label} is part of Option B.`);
+  assertValid(problems);
+  mutate((s) => {
+    const f = s.firms.find((x) => x.id === firm.id);
+    f.settings.integrations[key] = !!on;
+    audit(actor.name, on ? 'Integration connected' : 'Integration disconnected', def.label, f.id);
+  });
+}
+
+/** Asks ThinkVibes for a plan or seat change (operators approve it in the console). */
+export function requestPlanChange(actor, { plan, seats, note }) {
+  const firm = requireAdmin(actor);
+  const n = Number(seats);
+  const problems = [];
+  if (!PLANS[plan] || plan === 'Trial') problems.push('Choose Option A or Option B.');
+  if (!Number.isInteger(n) || n < seatsUsed(firm.id) || n > 500) problems.push(`Seats must be at least ${seatsUsed(firm.id)} (people already using a seat).`);
+  if (plan === firm.plan && n === firm.seats) problems.push('That is your current plan.');
+  assertValid(problems);
+  mutate((s) => {
+    const f = s.firms.find((x) => x.id === firm.id);
+    f.planRequest = { plan, seats: n, note: (note || '').trim(), at: now(), by: actor.name };
+    audit(actor.name, 'Plan change requested', `${PLANS[plan].label}, ${n} seats.`, f.id);
+  });
+}
+
+/**
+ * Routing suggestion from past results (scripted analysis of this firm's own leads):
+ * compares conversion when the owner spoke the client's language vs not, and SLA hit rate by source.
+ */
+export function routingSuggestion(actor) {
+  const s = getState();
+  const users = new Map(s.users.map((u) => [u.id, u]));
+  const leads = s.leads.filter((l) => l.firmId === actor.firmId && l.ownerId && l.lang && l.lang !== 'English');
+  const conv = (list) => (list.length ? list.filter((l) => ['Qualified', 'Viewing', 'Converted'].includes(l.status)).length / list.length : 0);
+  const same = leads.filter((l) => (users.get(l.ownerId)?.langs || []).includes(l.lang));
+  const diff = leads.filter((l) => !(users.get(l.ownerId)?.langs || []).includes(l.lang));
+  const out = [];
+  if (same.length >= 5 && diff.length >= 3) {
+    const ratio = conv(diff) ? conv(same) / conv(diff) : null;
+    out.push(ratio && ratio > 1.1
+      ? `Leads handled in the client's own language qualified ${ratio.toFixed(1)}× as often (${Math.round(conv(same) * 100)}% vs ${Math.round(conv(diff) * 100)}%, ${same.length + diff.length} non-English leads). Keep "Language match" above "Lowest open workload".`
+      : `Language match made little difference this period (${Math.round(conv(same) * 100)}% vs ${Math.round(conv(diff) * 100)}%). You could move "Lowest open workload" higher to spread leads more evenly.`);
+  }
+  const arabic = s.users.filter((u) => u.firmId === actor.firmId && u.status === 'Active' && u.role === 'Agent' && (u.langs || []).includes('Arabic')).length;
+  const arLeads = s.leads.filter((l) => l.firmId === actor.firmId && l.lang === 'Arabic' && Date.now() - l.createdAt < 30 * DAY).length;
+  if (arLeads && arabic) out.push(`${arLeads} Arabic-speaking leads arrived in 30 days for ${arabic} Arabic-speaking agents (${Math.round(arLeads / arabic)} each).`);
+  return out.length ? out : ['Not enough history yet. Suggestions appear after a few weeks of leads.'];
+}

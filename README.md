@@ -8,9 +8,9 @@ All people, firms, licence numbers and figures are fictional.
 
 | Address | What it is |
 |---|---|
-| `/` | Product page |
+| `/` | Product page: roles, AI agents, privacy, plans and a guided demo |
 | `/join/` | Request to join, sign-up from an invite (documents, verification), registration status |
-| `/portal/` | The firm portal: sign-in, setup wizard, home and My Day, leads inbox and workspace, pipeline and deal room, people. Inventory, campaigns, team performance, commission, compliance and settings arrive in drop 3 |
+| `/portal/` | The firm portal: My Day, leads, pipeline and deal room, inventory, campaign studio, team performance, commission, compliance centre, firm settings, people, the Copilot and Ctrl+K search. Works on a phone |
 | `/console/` | ThinkVibes operator console: join requests, invites, verification queue, firms, email and audit logs |
 
 Open them in separate tabs: they share one set of data, and each tab keeps its own signed-in person.
@@ -36,6 +36,28 @@ Sign in on `/portal/` from the demo list.
 5. **Deal room**: upload a passport (put `mismatch` or `expired` in the file name to see those checks), confirm the Document Reader's fields, submit KYC. Then sign in as Huda Karim (Compliance) in another tab to screen and verify it, record the booking deposit, and the move goes through.
 6. **Compliance**: run screening on Viktor Brankovich's deal (Crescent Key, secondary): a possible watchlist match blocks it until Compliance clears it, and his AED 120,000 cash deposit asks for a REAR draft.
 7. **Privacy**: as Faisal Noor (Palm Arc), search a Crescent Key client's phone: nothing. The same client enquired at both firms; neither firm sees a duplicate warning.
+
+## Demo walkthrough (drops 3 and 4: the rest of the firm)
+
+1. **Inventory** (Sara Khan): pick one of her leads under *Match a lead*. **Send** opens a WhatsApp with the unit filled in; a second click sends it. The same matches show on every lead.
+2. **Campaign studio** (Maya Rizk, marketing): *Harbor Lights Q4* cannot go live: no permit, no approved creative. Add a permit (6–10 digits), draft Arabic copy with the Marketing Analyst (it carries the permit number), approve it as Khalid in another tab, then go live. Palm Arc (Option A) has no campaigns.
+3. **Team performance** (Rania Aziz): leaderboard, speed to lead, and the re-assign queue: pick a new owner on a stalled lead and press **Re-assign**. **Coaching** opens a note drafted from the agent's numbers.
+4. **Commission** (Khalid Mansour): expected → invoiced → collected → paid out, who owes what by age, agent payouts, and a ledger where every row links to its deal, lead, source and campaign.
+5. **Compliance centre** (Huda Karim): KYC queue, the Palmyra permit and Dmitri's BRN expiring within 30 days, screening, REAR cases, do-not-call hits, audit log. **Run privacy check** tries 10 ways into another firm's data and shows each one blocked.
+6. **Firm settings** (Khalid): change the first-reply SLA or a stage gate and the next lead or deal follows it at once. KYC and screening gates are locked by regulation.
+7. **Copilot** (button at the top, or the bottom bar on a phone): "which deals are at risk?", "show team overdue follow-ups", "re-assign <lead> to Omar" (asks first), "how many leads does Palm Arc have?" (refused).
+8. **Ctrl+K**: "2BR leads from Meta this month", a name, a phone or a page.
+9. **Phone**: open the portal at 390 px: menu drawer, bottom bar (Today, Leads, Deals, Copilot) and a floating + for quick capture.
+10. **Demo controls** in the user menu: demo clock (+1 hour, +1 day), simulate a lead, view as another persona, reset.
+11. **Console** (Ananya Iyer) → a firm: health and churn risk from counts only.
+
+## Copilot model (optional)
+
+The Copilot works everywhere with its built-in engine (questions about leads, deals, follow-ups, pipeline, commission, KYC; re-assigning; refusing other firms). On Hostinger, `api/copilot.php` also sends free-form questions to Claude, with only the asking user's own records as context:
+
+1. Copy `api/config.example.php` to `api/config.php` on the server (never commit it; it is in `.gitignore`), add the API key and the site's origin.
+2. `api/.htaccess` blocks direct access to the config files. The proxy accepts same-origin requests only and allows 20 questions a minute per visitor.
+3. GitHub Pages cannot run PHP, so there the Copilot stays on the built-in engine.
 
 ## Run it locally
 
@@ -70,7 +92,7 @@ npm test
 
 ## Deploy (Hostinger)
 
-Connect the GitHub repository, build command `npm run build`, output directory `build`. Point the subdomain (e.g. `brokers.vibeestate.space`) at it with the CNAME record Hostinger shows. The site asks search engines not to index it (`robots.txt`, `noindex`, `X-Robots-Tag`).
+Connect the GitHub repository, build command `npm run build`, output directory `build` (it includes `api/`; add `api/config.php` by hand for the Copilot model). Point the subdomain (e.g. `brokers.vibeestate.space`) at it with the CNAME record Hostinger shows. The site asks search engines not to index it (`robots.txt`, `noindex`, `X-Robots-Tag`).
 
 ## Licences
 

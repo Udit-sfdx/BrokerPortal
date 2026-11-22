@@ -108,17 +108,17 @@ function listView(user, leads, t, limit) {
   return `<div class="bp-table-wrap"><table class="slds-table slds-table_cell-buffer slds-table_bordered bp-lead-table" aria-label="Leads">
     <thead><tr class="slds-line-height_reset">
       ${manager ? `<th scope="col" style="width:32px"><div class="slds-checkbox"><input type="checkbox" id="sel-all" ${allSel ? 'checked' : ''} data-act="selectAllLeads" aria-label="Select all shown"><label class="slds-checkbox__label" for="sel-all"><span class="slds-checkbox_faux"></span></label></div></th>` : ''}
-      <th scope="col">Lead</th><th scope="col">Score</th><th scope="col">Status</th><th scope="col">Source</th>${manager ? '<th scope="col">Owner</th>' : ''}<th scope="col">First reply / follow-up</th><th scope="col">Arrived</th>
+      <th scope="col">Lead</th><th scope="col">Score</th><th scope="col" class="bp-hide-sm">Status</th><th scope="col" class="bp-hide-sm">Source</th>${manager ? '<th scope="col" class="bp-hide-sm">Owner</th>' : ''}<th scope="col">First reply / follow-up</th><th scope="col" class="bp-hide-sm">Arrived</th>
     </tr></thead><tbody>
     ${shown.map((l) => `<tr class="${arriving(l, t) ? 'bp-arrive' : ''}" data-lead-row="${esc(l.id)}">
       ${manager ? `<td><div class="slds-checkbox"><input type="checkbox" id="sel-${esc(l.id)}" ${selection.has(l.id) ? 'checked' : ''} ${isOpenLead(l) ? '' : 'disabled'} data-act="selectLead" data-id="${esc(l.id)}" aria-label="Select ${esc(l.name)}"><label class="slds-checkbox__label" for="sel-${esc(l.id)}"><span class="slds-checkbox_faux"></span></label></div></td>` : ''}
       <td><a class="bp-lead-name" href="portal/#/lead/${esc(l.id)}">${esc(l.name)}</a>${arriving(l, t) ? ' <span class="bp-new-dot">new</span>' : ''}<div class="bp-small bp-muted">${esc(l.interest)}</div><div>${leadFlags(l)}</div></td>
       <td>${scoreChip(l)}</td>
-      <td>${leadStatusBadge(l.status)}</td>
-      <td class="bp-small">${esc(l.source)}</td>
-      ${manager ? `<td class="bp-small"><span class="bp-owner" title="${esc((l.routingTrace || []).join(' → '))}">${l.ownerId ? `${avatar(leadOwnerName(l), firmOf(user).brand, 22)} ${esc(leadOwnerName(l))}` : '<span class="bp-flag dup">Unassigned</span>'}</span></td>` : ''}
+      <td class="bp-hide-sm">${leadStatusBadge(l.status)}</td>
+      <td class="bp-small bp-hide-sm">${esc(l.source)}</td>
+      ${manager ? `<td class="bp-small bp-hide-sm"><span class="bp-owner" title="${esc((l.routingTrace || []).join(' → '))}">${l.ownerId ? `${avatar(leadOwnerName(l), firmOf(user).brand, 22)} ${esc(leadOwnerName(l))}` : '<span class="bp-flag dup">Unassigned</span>'}</span></td>` : ''}
       <td>${['running', 'breached'].includes(slaState(l, t).state) ? slaTimer(l, t) : isOpenLead(l) ? followUpLabel(l, t) : `<span class="bp-small bp-muted">${l.status === 'Lost' ? esc(l.lostReason) : esc(l.dealId || '')}</span>`}</td>
-      <td class="bp-small bp-muted">${fmtAgo(l.createdAt, t)}</td>
+      <td class="bp-small bp-muted bp-hide-sm">${fmtAgo(l.createdAt, t)}</td>
     </tr>`).join('')}</tbody></table></div>
     ${leads.length > limit ? `<div class="slds-m-top_small" style="text-align:center"><button type="button" class="slds-button slds-button_neutral" data-act="inboxMore">Show more (${leads.length - limit} left)</button></div>` : ''}`;
 }

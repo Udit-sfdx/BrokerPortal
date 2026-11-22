@@ -100,7 +100,10 @@ export function slaState(lead, t) {
 
 /* ---------- deals: stage gates ---------- */
 
-export const stagesFor = (type) => PIPELINES[type] || [];
+/** Firm-specific gates (from Firm settings) are resolved through this hook; the default is the product pipeline. */
+let pipelineResolver = null;
+export const setPipelineResolver = (fn) => { pipelineResolver = fn; };
+export const stagesFor = (type, firmId) => (firmId && pipelineResolver && pipelineResolver(firmId, type)) || PIPELINES[type] || [];
 export const stageIndex = (type, stageId) => stagesFor(type).findIndex((s) => s.id === stageId);
 export const stageLabel = (type, stageId) => (stageId === 'Lost' ? 'Lost' : stagesFor(type).find((s) => s.id === stageId)?.label || stageId);
 
@@ -135,7 +138,7 @@ export function requirement(deal, req) {
  */
 export function gateProblems(deal, toStage) {
   if (toStage === 'Lost') return [];
-  const stages = stagesFor(deal.type);
+  const stages = stagesFor(deal.type, deal.firmId);
   const from = stageIndex(deal.type, deal.stage);
   const to = stageIndex(deal.type, toStage);
   if (to < 0) return [{ stage: toStage, text: 'Unknown stage', tab: 'overview' }];
@@ -152,7 +155,7 @@ export function gateProblems(deal, toStage) {
 
 /** Next stage's checklist for the stage path: [{ text, ok, tab }]. */
 export function nextGate(deal) {
-  const stages = stagesFor(deal.type);
+  const stages = stagesFor(deal.type, deal.firmId);
   const i = stageIndex(deal.type, deal.stage);
   const next = stages[i + 1];
   if (!next) return { stage: null, items: [] };
@@ -194,7 +197,7 @@ export const cashNeedsReport = (deal) => (deal.cashAmount || 0) >= CASH_REPORT_T
 export function dealRisks(deal, t) {
   if (['Won', 'Lost'].includes(deal.stage)) return [];
   const out = [];
-  const stage = stagesFor(deal.type).find((s) => s.id === deal.stage);
+  const stage = stagesFor(deal.type, deal.firmId).find((s) => s.id === deal.stage);
   const days = Math.floor((t - deal.stageChangedAt) / DAY);
   if (stage && stage.stuckDays && days > stage.stuckDays) {
     const missing = nextGate(deal).items.filter((i) => !i.ok);
@@ -229,9 +232,62 @@ export function scheduleNextPayments(deal) {
 
 export const buildHandover = (type) => (HANDOVER_CHECKLISTS[type] || []).map((label) => ({ label, done: false }));
 
-export function newCommission(type) {
-  const r = COMMISSION_RULES[type] || COMMISSION_RULES.Secondary;
+export function newCommission(type, firmDefaults = {}) {
+  const r = { ...(COMMISSION_RULES[type] || COMMISSION_RULES.Secondary), ...(firmDefaults[type] || {}) };
   return { rate: r.rate, payer: r.payer, agentShare: r.agentShare, status: 'Expected', invoicedAt: null, invoiceDueAt: null, collectedAt: null };
 }
 
 export const minutes = (n) => n * MIN;
+
+/* ---------- inventory: unit matching ---------- */
+
+const KIND_FOR_LOB = { 'Off-plan': 'Off-plan', Secondary: 'Resale', Rental: 'Rental' };
+const BED_ORDER = ['Studio', '1', '2', '3', '4', '5+'];
+
+/** Scores available units of the right kind for a lead, best first, with the reasons. */
+export function matchUnits(lead, units, projects = [], limit = 5) {
+  const kind = KIND_FOR_LOB[lead.lob];
+  const out = [];
+  for (const u of units) {
+    if (u.status !== 'Available' || (kind && u.kind !== kind)) continue;
+    const reasons = [];
+    let score = 0;
+    const db = Math.abs(BED_ORDER.indexOf(u.beds) - BED_ORDER.indexOf(lead.beds));
+    if (lead.beds && db === 0) { score += 40; reasons.push(`${u.beds === 'Studio' ? 'Studio' : `${u.beds}BR`} as asked`); } else if (lead.beds && db === 1) { score += 15; reasons.push('One bedroom off'); }
+    if (lead.budgetMax) {
+      if (u.price <= lead.budgetMax) { score += 30; reasons.push('Within budget'); } else if (u.price <= lead.budgetMax * 1.1) { score += 10; reasons.push('Up to 10% over budget'); } else continue;
+    }
+    const project = projects.find((p) => p.id === u.projectId);
+    if (lead.project && project && project.name === lead.project) { score += 25; reasons.push(`In ${project.name}`); }
+    if (lead.area && (u.area === lead.area || (project && project.area === lead.area))) { score += 20; reasons.push(`In ${lead.area}`); }
+    if (score >= 40) out.push({ unit: u, project, score, reasons });
+  }
+  return out.sort((a, b) => b.score - a.score || a.unit.price - b.unit.price).slice(0, limit);
+}
+
+/* ---------- campaigns ---------- */
+
+/** Ad permit state: valid, expiring (within 30 days), expired or missing. */
+export function permitState(permit, t) {
+  if (!permit || !permit.number) return { state: 'missing', text: 'No ad permit' };
+  if (permit.expiresAt < t) return { state: 'expired', text: 'Permit expired' };
+  if (permit.expiresAt - t < 30 * DAY) return { state: 'expiring', text: `Permit expires in ${Math.ceil((permit.expiresAt - t) / DAY)} days` };
+  return { state: 'valid', text: 'Permit valid' };
+}
+
+/** Funnel from spend to commission for one campaign, from the leads it brought in. */
+export function campaignFunnel(campaign, leads, deals) {
+  const own = leads.filter((l) => l.campaignId === campaign.id);
+  const dealOf = (l) => deals.find((d) => d.id === l.dealId);
+  const won = own.map(dealOf).filter((d) => d && d.stage === 'Won');
+  const commission = won.reduce((n, d) => n + commissionFor(d).firmNet, 0);
+  const spend = campaign.spend.reduce((n, x) => n + x.amount, 0);
+  return {
+    spend, leads: own.length,
+    contacted: own.filter((l) => l.firstResponseAt).length,
+    qualified: own.filter((l) => ['Qualified', 'Viewing', 'Converted'].includes(l.status)).length,
+    deals: own.filter((l) => l.dealId).length, won: won.length, commission,
+    cpl: own.length ? Math.round(spend / own.length) : null,
+    roi: spend ? commission / spend : null,
+  };
+}

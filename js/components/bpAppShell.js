@@ -12,16 +12,16 @@ export const PORTAL_NAV = [
   { id: 'home', label: 'Home', icon: 'home', roles: 'all', labelFor: { Agent: 'My Day', 'Team Leader': 'My Day' } },
   { id: 'leads', label: 'Leads', icon: 'lead', roles: ['Owner', 'Director', 'Team Leader', 'Agent'] },
   { id: 'pipeline', label: 'Pipeline', icon: 'opportunity', roles: ['Owner', 'Director', 'Team Leader', 'Agent', 'Compliance'] },
-  { id: 'inventory', label: 'Inventory', icon: 'apps', roles: ['Owner', 'Director', 'Team Leader', 'Agent', 'Marketing'], drop: 3 },
+  { id: 'inventory', label: 'Inventory', icon: 'apps', roles: ['Owner', 'Director', 'Team Leader', 'Agent', 'Marketing'] },
   { group: 'Grow and run' },
-  { id: 'campaigns', label: 'Campaigns', icon: 'campaign', roles: ['Owner', 'Director', 'Marketing'], drop: 3, plan: 'marketing' },
-  { id: 'team', label: 'Team performance', icon: 'chart', roles: ['Owner', 'Director', 'Team Leader'], drop: 3 },
-  { id: 'commission', label: 'Commission', icon: 'moneybag', roles: ['Owner', 'Director', 'Compliance'], drop: 3 },
-  { id: 'compliance', label: 'Compliance', icon: 'shield', roles: ['Owner', 'Director', 'Compliance'], drop: 3 },
+  { id: 'campaigns', label: 'Campaigns', icon: 'campaign', roles: ['Owner', 'Director', 'Marketing'], plan: 'marketing' },
+  { id: 'team', label: 'Team performance', icon: 'chart', roles: ['Owner', 'Director', 'Team Leader'] },
+  { id: 'commission', label: 'Commission', icon: 'moneybag', roles: ['Owner', 'Director', 'Compliance'] },
+  { id: 'compliance', label: 'Compliance', icon: 'shield', roles: ['Owner', 'Director', 'Compliance'] },
   { group: 'Admin' },
   { id: 'onboarding', label: 'Finish setup', icon: 'setup_assistant_guide', roles: ['Owner'], setupOnly: true },
   { id: 'people', label: 'People', icon: 'people', roles: ['Owner'] },
-  { id: 'settings', label: 'Firm settings', icon: 'settings', roles: ['Owner'], drop: 3 },
+  { id: 'settings', label: 'Firm settings', icon: 'settings', roles: ['Owner'] },
 ];
 
 export function navFor(user, firm) {
@@ -56,7 +56,7 @@ function notificationsPanel(userId) {
  * Renders the shell around a page body.
  * opts: { user, firm, active, body, notifOpen, userMenuOpen, console: bool, nav (override), title }
  */
-export function bpAppShell({ user, firm, active, body, notifOpen = false, userMenuOpen = false, consoleMode = false, nav = null }) {
+export function bpAppShell({ user, firm, active, body, notifOpen = false, userMenuOpen = false, consoleMode = false, nav = null, copilot = '', menuOpen = false, demo = null }) {
   const items = nav || navFor(user, firm);
   const brand = consoleMode ? '#3e3e3c' : firm.brand;
   const audience = consoleMode ? 'OP-ALL' : user.id;
@@ -67,7 +67,16 @@ export function bpAppShell({ user, firm, active, body, notifOpen = false, userMe
     ? `<li class="bp-nav-group">${esc(n.group)}</li>`
     : `<li><a href="${consoleMode ? 'console' : 'portal'}/#/${n.id}" class="${active === n.id ? 'is-active' : ''}" ${n.id === 'onboarding' ? 'style="background:rgba(221,122,1,.25)"' : ''}>${uIcon(n.icon, 'slds-icon_x-small')}<span>${esc((n.labelFor && n.labelFor[user.role]) || n.label)}</span>${n.drop ? `<span class="bp-soon">drop ${n.drop}</span>` : ''}${n.count ? `<span class="bp-soon">${n.count}</span>` : ''}</a></li>`).join('');
 
-  return `<div class="bp-shell ${consoleMode ? 'bp-console' : ''}" style="--bp-brand:${esc(brand)}">
+  const tab = (id, label, icon, act) => `<${act ? `button type="button" data-act="${act}"` : `a href="portal/#/${id}"`} class="bp-tab ${active === id || (act && copilot) ? 'is-active' : ''}">${uIcon(icon, 'slds-icon_x-small')}<span>${label}</span></${act ? 'button' : 'a'}>`;
+  const bottomBar = consoleMode ? '' : `<nav class="bp-bottom" aria-label="Quick navigation">${tab('home', ['Agent', 'Team Leader'].includes(user.role) ? 'Today' : 'Home', 'home')}
+    ${items.some((n) => n.id === 'leads') ? tab('leads', 'Leads', 'lead') : ''}${items.some((n) => n.id === 'pipeline') ? tab('pipeline', 'Deals', 'opportunity') : ''}${tab('copilot', 'Copilot', 'sparkles', 'toggleCopilot')}</nav>
+    ${items.some((n) => n.id === 'leads') ? `<button type="button" class="bp-fab" data-act="quickCapture" aria-label="Quick capture a lead">${uIcon('add', 'slds-icon_small')}</button>` : ''}`;
+  const demoControls = consoleMode || !demo ? '' : `<div class="bp-demo-controls"><div class="bp-small"><b>Demo controls</b> <span class="bp-muted">(demo only)</span></div>
+    <div class="bp-small bp-muted">Demo clock: ${esc(demo.clock)}${demo.offset ? ` (moved ${esc(demo.offset)})` : ''}</div>
+    <div class="bp-form-actions"><button type="button" class="slds-button slds-button_neutral" data-act="demoClock" data-h="1">+1 hour</button><button type="button" class="slds-button slds-button_neutral" data-act="demoClock" data-h="24">+1 day</button>${demo.offset ? '<button type="button" class="slds-button slds-button_neutral" data-act="demoClock" data-h="0">Real time</button>' : ''}</div>
+    <div class="bp-form-actions"><button type="button" class="slds-button slds-button_neutral" data-act="simulateLead">Simulate lead</button><button type="button" class="slds-button slds-button_neutral" data-act="switchPersona">View as…</button><button type="button" class="slds-button slds-button_text-destructive" data-act="resetDemo">Reset demo</button></div></div>`;
+
+  return `<div class="bp-shell ${consoleMode ? 'bp-console' : ''} ${copilot ? 'has-copilot' : ''} ${menuOpen ? 'menu-open' : ''}" style="--bp-brand:${esc(brand)}">
     <aside class="bp-side">
       <div class="bp-side-firm"><span class="bp-logo">${logo}</span><div><b>${esc(consoleMode ? 'Broker Portal' : firm.name)}</b><span>${subtitle}</span></div></div>
       <ul class="bp-nav">${navHtml}</ul>
@@ -75,9 +84,10 @@ export function bpAppShell({ user, firm, active, body, notifOpen = false, userMe
     </aside>
     <div>
       <header class="bp-top">
+        <button type="button" class="slds-button slds-button_icon bp-menu-btn" data-act="toggleMenu" aria-label="Menu" aria-expanded="${menuOpen}">${uIcon('rows', 'slds-icon_small')}</button>
         <div class="bp-search" data-act="openSearch" role="button" tabindex="0">${uIcon('search', 'slds-icon_x-small')}<span>Search ${consoleMode ? 'firms and requests' : 'leads, deals, people'}…</span><kbd>Ctrl K</kbd></div>
         <div class="bp-top-right">
-          ${consoleMode ? '' : `<button type="button" class="slds-button slds-button_neutral bp-copilot-btn" data-act="openCopilot">${uIcon('sparkles', 'slds-icon_x-small')}&nbsp;Copilot</button>`}
+          ${consoleMode ? '' : `<button type="button" class="slds-button ${copilot ? 'slds-button_brand' : 'slds-button_neutral'} bp-copilot-btn" data-act="toggleCopilot" aria-pressed="${!!copilot}">${uIcon('sparkles', 'slds-icon_x-small')}&nbsp;Copilot</button>`}
           <div class="bp-rel">
             <button type="button" class="slds-button slds-button_icon slds-button_icon-border-filled" title="Notifications" data-act="toggleNotifications">${bIconOnly('notification')}</button>
             ${unread ? `<span class="bp-count">${unread}</span>` : ''}
@@ -88,6 +98,7 @@ export function bpAppShell({ user, firm, active, body, notifOpen = false, userMe
             ${userMenuOpen ? `<div class="slds-popover slds-popover_panel bp-pop bp-pop-sm"><div class="slds-popover__body slds-p-around_small">
               <div class="bp-small bp-muted">${esc(user.email)}</div>
               ${consoleMode ? '' : `<div class="bp-small bp-muted slds-m-bottom_small">Login username: ${esc(user.username)}</div>`}
+              ${demoControls}
               <button type="button" class="slds-button slds-button_neutral slds-button_stretch" data-act="signOut">Sign out</button></div></div>` : ''}
           </div>
         </div>
@@ -95,5 +106,7 @@ export function bpAppShell({ user, firm, active, body, notifOpen = false, userMe
       ${consoleMode ? '' : banner(firm)}
       <main class="bp-main" id="main">${body}</main>
     </div>
+    ${copilot}
+    ${bottomBar}
   </div>`;
 }

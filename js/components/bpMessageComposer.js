@@ -6,21 +6,21 @@ import { openModal, select, uIcon, alertBox, readForm } from '../core/ui.js';
 import { esc } from '../core/util.js';
 import { MESSAGE_TEMPLATES } from '../core/config.js';
 import { getLead, messageProblems, sendMessage, templateText } from '../services/leadService.js';
-import { suggestReply } from '../services/aiService.js';
+import { suggestReply, firmTemplates } from '../services/aiService.js';
 import { firmOf } from '../services/firmService.js';
 import { modalForm, modalFooter, submitModal } from './bpModalForm.js';
 
 /** Opens the composer. opts.useAi pre-fills the Follow-up Writer's draft. */
-export function openComposer(actor, lead, { channel, templateId, lang, text, why } = {}) {
+export function openComposer(actor, lead, { channel, templateId, lang, text, why, extra } = {}) {
   const ch = channel || (lead.consent?.whatsapp && lead.phone ? 'WhatsApp' : 'Email');
   const tid = templateId || 'intro';
   const lg = lang || (lead.lang === 'Arabic' ? 'Arabic' : 'English');
-  const body = text ?? templateText(tid, lg, lead, actor);
+  const body = text ?? templateText(tid, lg, lead, actor, extra);
   const problems = messageProblems(lead, ch);
   const html = `<input type="hidden" name="leadId" value="${esc(lead.id)}">
     <div class="slds-grid slds-gutters_small slds-wrap">
       <div class="slds-col slds-size_1-of-3">${select('msgChannel', 'Channel', ['WhatsApp', 'Email'], { value: ch, name: 'channel', attrs: 'data-act="composerChange"' })}</div>
-      <div class="slds-col slds-size_1-of-3">${select('msgTemplate', 'Template', MESSAGE_TEMPLATES.map((t) => [t.id, t.name]), { value: tid, name: 'templateId', attrs: 'data-act="composerChange"' })}</div>
+      <div class="slds-col slds-size_1-of-3">${select('msgTemplate', 'Template', firmTemplates(firmOf(actor)).map((t) => [t.id, t.name]), { value: tid, name: 'templateId', attrs: 'data-act="composerChange"' })}</div>
       <div class="slds-col slds-size_1-of-3">${select('msgLang', 'Language', ['English', 'Arabic'], { value: lg, name: 'lang', attrs: 'data-act="composerChange"' })}</div>
     </div>
     ${problems.length ? `<div class="slds-m-bottom_small">${alertBox('warning', problems.map(esc).join('<br>'))}</div>` : ''}

@@ -155,7 +155,7 @@ export function confirmDocument(actor, id, key, fields = {}) {
 export function removeDocument(actor, id, key) {
   const deal = requireDeal(actor, id, { compliance: true });
   assertValid(deal.documents[key] ? [] : ['No document to remove.']);
-  const neededByCurrent = stagesFor(deal.type).slice(1, stageIndex(deal.type, deal.stage) + 1).some((st) => (st.gate || []).includes(`doc:${key}`));
+  const neededByCurrent = stagesFor(deal.type, deal.firmId).slice(1, stageIndex(deal.type, deal.stage) + 1).some((st) => (st.gate || []).includes(`doc:${key}`));
   assertValid(neededByCurrent ? [`This document is needed for the deal's current stage (${stageLabel(deal.type, deal.stage)}). Upload a replacement instead.`] : []);
   return mutate((s) => {
     const d = findIn(s, id);

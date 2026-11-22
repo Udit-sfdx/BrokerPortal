@@ -190,3 +190,33 @@ export const WATCHLIST = [
   { name: 'Hassan Rafiq Dawood', list: 'Demo PEP list', reason: 'Politically exposed person (demo)' },
   { name: 'Marta Kolesnik', list: 'Demo sanctions list', reason: 'Travel ban (demo)' },
 ];
+
+/* ---------- drop 3: inventory, campaigns, settings ---------- */
+
+export const UNIT_KINDS = { 'Off-plan': 'Off-plan', Secondary: 'Resale', Rental: 'Rental' };
+export const UNIT_STATUSES = ['Available', 'Reserved', 'Sold'];
+export const CAMPAIGN_CHANNELS = ['Meta ads', 'Google ads', 'Developer event', 'Website', 'TikTok'];
+export const CAMPAIGN_STATUSES = ['Draft', 'Live', 'Paused', 'Ended'];
+/** Gates that regulation requires: firms cannot switch them off in settings. */
+export const LOCKED_GATES = ['kyc', 'screening'];
+export const GATE_CHOICES = {
+  kyc: 'KYC verified by Compliance', screening: 'Watchlist screening clear', handover: 'Handover checklist complete',
+  'doc:passport': 'Client passport', 'doc:eid': 'Client Emirates ID', 'doc:spa': 'SPA', 'doc:oqood': 'Oqood certificate',
+  'doc:formF': 'MOU (Form F)', 'doc:noc': 'Developer NOC', 'doc:titleDeed': 'New title deed', 'doc:tenancy': 'Tenancy contract', 'doc:ejari': 'Ejari certificate',
+  'pay:booking': 'Booking deposit', 'pay:dld': 'DLD fee', 'pay:deposit': 'Security deposit', 'pay:balance': 'Balance payment', 'pay:security': 'Rental security deposit',
+};
+export const INTEGRATIONS = [
+  { key: 'propertyFinder', label: 'Property Finder', kind: 'Lead source', detail: 'Enquiries arrive in the inbox within seconds.' },
+  { key: 'bayut', label: 'Bayut and Dubizzle', kind: 'Lead source', detail: 'Enquiries and listing performance.' },
+  { key: 'meta', label: 'Meta lead ads', kind: 'Lead source', detail: 'Lead forms with campaign and creative attached.', plan: 'marketing' },
+  { key: 'whatsapp', label: 'WhatsApp Business', kind: 'Messaging', detail: 'Approved templates; consent recorded per client.' },
+  { key: 'telephony', label: 'Telephony (click to call)', kind: 'Messaging', detail: 'Calls placed from the work line and logged.' },
+  { key: 'trakheesi', label: 'DLD Trakheesi permits', kind: 'Regulator', detail: 'Ad permit numbers checked before a campaign goes live.', plan: 'marketing' },
+  { key: 'goaml', label: 'goAML (draft only)', kind: 'Regulator', detail: 'REAR reports drafted for the AML officer; never filed automatically.' },
+];
+
+MESSAGE_TEMPLATES.push({
+  id: 'unit', name: 'Matching unit',
+  en: 'Hi {first}, here is a unit that fits what you asked for: {unit}, {price}. Shall I hold it for a viewing? {agent}, {firm}',
+  ar: 'مرحباً {first}، هذه وحدة تناسب طلبك: {unit}، {price}. هل أحجزها لك للمعاينة؟ {agent}، {firm}',
+});

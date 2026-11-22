@@ -25,14 +25,14 @@ const aiTag = (label) => `<span class="bp-ai-tag">${uIcon('sparkles', 'slds-icon
 const ok = (b) => (b ? `<span class="bp-ok">${uIcon('check', 'slds-icon_xx-small')}</span>` : `<span class="bp-no">${uIcon('close', 'slds-icon_xx-small')}</span>`);
 
 /** Documents this deal type needs, in the order its gates ask for them. */
-function requiredDocs(type) {
+function requiredDocs(type, firmId) {
   const out = [];
-  for (const st of stagesFor(type)) for (const req of st.gate || []) if (req.startsWith('doc:') && !out.some((x) => x.key === req.slice(4))) out.push({ key: req.slice(4), stage: st.label });
+  for (const st of stagesFor(type, firmId)) for (const req of st.gate || []) if (req.startsWith('doc:') && !out.some((x) => x.key === req.slice(4))) out.push({ key: req.slice(4), stage: st.label });
   return out;
 }
 
 function stagePath(user, deal) {
-  const stages = stagesFor(deal.type);
+  const stages = stagesFor(deal.type, deal.firmId);
   const cur = stageIndex(deal.type, deal.stage);
   const canMove = canWorkDeal(user, deal) && !['Won', 'Lost'].includes(deal.stage);
   return `<div class="slds-path bp-path"><div class="slds-grid slds-path__track"><div class="slds-grid slds-path__scroller-container"><div class="slds-path__scroller"><div class="slds-path__scroller_inner">
@@ -96,7 +96,7 @@ function readerFields(deal, key, doc, editable) {
 
 function documentsTab(user, deal) {
   const editable = canWorkCompliance(user, deal);
-  const docs = requiredDocs(deal.type);
+  const docs = requiredDocs(deal.type, deal.firmId);
   return card('Documents', `<p class="bp-small bp-muted slds-m-bottom_small">${aiTag('Document Reader')} reads passports and Emirates IDs into the KYC fields; a person confirms every value. Demo: include "mismatch" or "expired" in a file name to see the checks.</p>
     ${docs.map(({ key, stage }) => {
       const doc = deal.documents[key];
@@ -147,7 +147,7 @@ function kycTab(user, deal) {
 
 function paymentsTab(user, deal, t) {
   const editable = canWorkDeal(user, deal) && !['Won', 'Lost'].includes(deal.stage);
-  const gated = new Set(stagesFor(deal.type).flatMap((s) => (s.gate || []).filter((g) => g.startsWith('pay:')).map((g) => g.slice(4))));
+  const gated = new Set(stagesFor(deal.type, deal.firmId).flatMap((s) => (s.gate || []).filter((g) => g.startsWith('pay:')).map((g) => g.slice(4))));
   return card('Payment plan', `<div class="bp-table-wrap"><table class="slds-table slds-table_bordered slds-table_cell-buffer"><thead><tr><th>Payment</th><th>%</th><th>Amount</th><th>Due</th><th>Status</th><th></th></tr></thead><tbody>
     ${deal.payments.map((p) => {
       const status = p.paidAt ? badge(`Received ${fmtDate(p.paidAt)}`, 'success') : p.dueAt && p.dueAt < t ? badge('Overdue', 'error') : p.dueAt ? badge('Due', 'warning') : badge('Later', 'light');
@@ -201,7 +201,7 @@ export function bpDealRoom(user, id, tab = 'overview') {
   const owner = getState().users.find((u) => u.id === deal.ownerId);
   const canWork = canWorkDeal(user, deal) && !['Won', 'Lost'].includes(deal.stage);
   const tabNav = `<div class="slds-tabs_default bp-tabs"><ul class="slds-tabs_default__nav" role="tablist">${TABS.map(([k, label]) => {
-    const flag = k === 'documents' ? requiredDocs(deal.type).filter((d) => !deal.documents[d.key]?.confirmed).length : k === 'kyc' ? (deal.kyc.status !== 'Verified' || deal.kyc.screening.status === 'Possible match' ? 1 : 0) : 0;
+    const flag = k === 'documents' ? requiredDocs(deal.type, deal.firmId).filter((d) => !deal.documents[d.key]?.confirmed).length : k === 'kyc' ? (deal.kyc.status !== 'Verified' || deal.kyc.screening.status === 'Possible match' ? 1 : 0) : 0;
     return `<li class="slds-tabs_default__item ${k === active ? 'slds-is-active' : ''}" role="presentation"><a class="slds-tabs_default__link" role="tab" aria-selected="${k === active}" href="portal/#/deal/${esc(deal.id)}/${k}">${esc(label)}${flag && !['Won', 'Lost'].includes(deal.stage) ? '<span class="bp-tab-dot" aria-label="needs attention"></span>' : ''}</a></li>`;
   }).join('')}</ul></div>`;
   const body = { overview: () => overviewTab(user, deal, t), documents: () => documentsTab(user, deal), kyc: () => kycTab(user, deal), payments: () => paymentsTab(user, deal, t), handover: () => handoverTab(user, deal), commission: () => commissionTab(user, deal) }[active]();

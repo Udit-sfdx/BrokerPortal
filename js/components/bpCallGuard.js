@@ -4,12 +4,13 @@
 
 import { openModal, select, field, textarea, alertBox, uIcon, readForm } from '../core/ui.js';
 import { esc } from '../core/util.js';
-import { callCheck, logCall, CALL_OUTCOMES, getLead, setDemoCallHours } from '../services/leadService.js';
+import { callCheck, logCall, CALL_OUTCOMES, getLead, setDemoCallHours, recordBlockedCall } from '../services/leadService.js';
 import { modalForm, modalFooter, submitModal } from './bpModalForm.js';
 
 export function openCallGuard(actor, lead) {
   const check = callCheck(actor, lead);
   if (!check.ok) {
+    if (lead.dnc) recordBlockedCall(actor, lead, check.problems);
     openModal('Call blocked', `${alertBox('warning', `${uIcon('ban', 'slds-icon_x-small')} You can't call ${esc(lead.name)} right now.`)}
       <ul class="slds-list_dotted slds-m-top_small bp-blocked-list">${check.problems.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
       <p class="bp-small bp-muted slds-m-top_small">These rules follow the UAE telemarketing regulation. They are enforced for every user and logged.</p>

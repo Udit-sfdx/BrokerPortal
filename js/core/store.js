@@ -4,6 +4,7 @@
 
 import { buildSeed, SEED_VERSION } from './seed.js';
 import { addDrop2Data } from './seedDrop2.js';
+import { addDrop3Data } from './seedDrop3.js';
 
 const KEY = 'bp.state';
 const SESSION_KEY = 'bp.session';
@@ -28,8 +29,9 @@ function readStored() {
 /** Brings data saved by an older drop up to date, keeping firms and people registered in this browser. */
 function upgrade(parsed) {
   if (parsed.version === SEED_VERSION) return parsed;
-  if (parsed.version === 2) {
-    addDrop2Data(parsed, Date.now());
+  if (parsed.version === 2 || parsed.version === 3) {
+    if (parsed.version === 2) addDrop2Data(parsed, Date.now());
+    addDrop3Data(parsed, Date.now());
     parsed.version = SEED_VERSION;
     return parsed;
   }
@@ -53,6 +55,9 @@ function write() {
 }
 
 const notify = () => listeners.forEach((fn) => fn());
+
+/** Current state without building it (null while the seed is being generated). */
+export const peekState = () => state;
 
 export function getState() {
   if (!state) {

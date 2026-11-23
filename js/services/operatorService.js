@@ -279,3 +279,28 @@ export function firmHealth(firmId) {
   const risk = !['Active', 'Trial'].includes(f.status) ? 'n/a' : reasons.length >= 3 ? 'High' : reasons.length ? 'Medium' : 'Low';
   return { leads7, slaPct, seatPct, idleDays, risk, reasons };
 }
+
+/**
+ * Console search for operators (Ctrl+K). Matches firms by name, ORN, trade licence or owner email,
+ * join requests by firm or contact, and invites by code or firm. Returns directory-level fields only:
+ * an operator never sees a firm's leads, deals or clients (Apex: BP_ConsoleSearchService, without sharing
+ * limited to Firm__c / Join_Request__c / Firm_Invite__c).
+ */
+export function searchConsole(query) {
+  const q = String(query ?? '').trim().toLowerCase();
+  const s = getState();
+  const has = (...vals) => vals.some((v) => v && String(v).toLowerCase().includes(q));
+  const ownerEmail = (f) => s.users.find((u) => u.id === f.ownerId)?.email;
+  const firms = (q ? s.firms.filter((f) => has(f.name, f.orn, f.tradeLicence, ownerEmail(f))) : s.firms.filter((f) => /Pending|Needs/.test(f.status)))
+    .map((f) => ({ label: f.name, sub: [f.status, f.orn && `ORN ${f.orn}`, f.tradeLicence].filter(Boolean).join(' · '), link: `#/firm/${f.id}`, icon: 'company' }));
+  const requests = (q ? s.joinRequests.filter((r) => has(r.firmName, r.contactName, r.email)) : s.joinRequests.filter((r) => r.status === 'Requested'))
+    .map((r) => ({ label: r.firmName, sub: `Request · ${r.status} · ${r.contactName}`, link: '#/requests', icon: 'email' }));
+  const invites = (q ? s.invites.filter((i) => has(i.token, i.firmName, i.ownerEmail)) : [])
+    .map((i) => ({ label: `${i.firmName} (${i.token})`, sub: `Invite · ${inviteState(i)}`, link: '#/invites', icon: 'send' }));
+  const group = (label, items) => ({ label, items: items.slice(0, 6), total: items.length });
+  return {
+    scope: 'the firm directory',
+    parsed: [],
+    groups: [group(q ? 'Firms' : 'Firms waiting for verification', firms), group(q ? 'Join requests' : 'New join requests', requests), group('Invites', invites)].filter((g) => g.total),
+  };
+}

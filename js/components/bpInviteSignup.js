@@ -120,6 +120,12 @@ function stepPlan(d) {
 
 export function bpInviteSignup(token) {
   const res = checkInvite(token);
+  // The tab that just submitted this invite re-renders after the store write: show its own
+  // submission instead of the "already used" warning meant for anyone else opening the link.
+  if (res.used && res.firmId && tabSession.get('join:submittedInvite') === String(token || '').trim().toUpperCase()) {
+    return bpAuthLayout(`${alertBox('success', 'Your registration was submitted. ThinkVibes reviews it, usually within 1 business day.')}
+      <div class="slds-m-top_large"><a class="slds-button slds-button_brand" href="join/#/status/${esc(res.firmId)}">View registration status</a></div>`, { headline: 'Registration submitted' });
+  }
   if (!res.invite) {
     return bpAuthLayout(`${alertBox('warning', esc(res.reason))}
       <div class="slds-m-top_large"><a class="slds-button slds-button_neutral" href="join/#/">Back</a>
@@ -256,6 +262,8 @@ export const signupActions = {
       go(`invite/${invite.token}`);
       return;
     }
+    // Set before the store write: the write re-renders this route synchronously.
+    tabSession.set('join:submittedInvite', invite.token);
     const firm = submitRegistration(invite.token, d);
     tabSession.set(keyFor(invite.token), null);
     tabSession.set('join:myFirm', firm.id);

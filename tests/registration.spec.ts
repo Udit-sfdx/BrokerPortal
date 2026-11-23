@@ -76,8 +76,20 @@ test.describe('Join page', () => {
     await signUpMarinaGate(page);
     await expect(page.locator('#modal-root')).toContainText('need verification');
     await expect(page.locator('#modal-root')).toContainText('verified', { timeout: 5000 });
-    await page.click('text=View registration status');
+    await page.click('#modal-root >> text=View registration status');
     await expect(body(page)).toContainText('ThinkVibes review');
+  });
+
+  test('after submitting, the page behind the popup shows the submission, while another tab is told the invite is used', async ({ page, context }) => {
+    await page.goto('join/#/invite/MGR7Q2K');
+    await signUpMarinaGate(page);
+    await expect(page.locator('#modal-root')).toContainText('verified', { timeout: 5000 });
+    await expect(page.locator('.slds-text-heading_large, h1').first()).not.toContainText('Invitation problem');
+    await expect(body(page)).toContainText('Registration submitted');
+    const other = await context.newPage();
+    await other.goto('join/#/invite/MGR7Q2K');
+    await expect(other.locator('body')).toContainText('already been used');
+    await expect(other.locator('body')).not.toContainText('Registration submitted');
   });
 
   test('a licence already registered fails the duplicate check', async ({ page }) => {

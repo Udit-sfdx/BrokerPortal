@@ -50,7 +50,7 @@ export function checkInvite(token) {
   const invite = getState().invites.find((i) => i.token === t);
   if (!invite) return { reason: 'This invite code is not valid. Check the link in your email.' };
   if (invite.revokedAt) return { reason: 'This invite was withdrawn. Contact the ThinkVibes sales team.' };
-  if (invite.usedAt) return { reason: 'This invite has already been used. If your firm is set up, sign in to the portal instead.', used: true };
+  if (invite.usedAt) return { reason: 'This invite has already been used. If your firm is set up, sign in to the portal instead.', used: true, firmId: invite.firmId || null };
   if (invite.expiresAt < now()) return { reason: 'This invite expired. Ask the ThinkVibes sales team to send a new one.' };
   return { invite };
 }

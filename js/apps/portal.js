@@ -170,6 +170,7 @@ document.addEventListener('keydown', (e) => {
     appActions.openSearch();
   }
 });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && ui.menuOpen && !document.querySelector('#modal-root .slds-modal')) { ui.menuOpen = false; app.refresh(); } });
 window.addEventListener('hashchange', () => { if (ui.menuOpen) { ui.menuOpen = false; app.refresh(); } });
 
 wireBoardDragAndDrop(actor);

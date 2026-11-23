@@ -518,6 +518,9 @@ a.bp-tile:hover { border-color: #c9c9c9; }
   .bp-shell, .bp-shell.has-copilot { grid-template-columns: 1fr; }
   .bp-side { position: fixed; z-index: 60; inset: 0 auto 0 0; width: 270px; height: 100vh; transform: translateX(-100%); transition: transform 0.2s; }
   .menu-open .bp-side { transform: none; box-shadow: 8px 0 30px rgba(0, 0, 0, 0.3); }
+  .bp-drawer-backdrop { position: fixed; inset: 0; z-index: 59; background: rgba(8, 20, 38, 0.45); }
+  .bp-side .bp-nav { display: block; } /* the drawer is a vertical list, not the tablet's wrapped row */
+  .bp-side .bp-nav-group { display: block; }
   .bp-menu-btn { display: inline-flex; }
   .bp-menu-btn .slds-icon { fill: #3e3e3c; }
   .bp-top { padding: 0 10px; gap: 8px; }

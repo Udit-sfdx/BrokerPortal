@@ -78,6 +78,7 @@ export function bpAppShell({ user, firm, active, body, notifOpen = false, userMe
     <div class="bp-form-actions"><button type="button" class="slds-button slds-button_neutral" data-act="simulateLead">Simulate lead</button><button type="button" class="slds-button slds-button_neutral" data-act="switchPersona">View as…</button><button type="button" class="slds-button slds-button_text-destructive" data-act="resetDemo">Reset demo</button></div></div>`;
 
   return `<div class="bp-shell ${consoleMode ? 'bp-console' : ''} ${copilot ? 'has-copilot' : ''} ${menuOpen ? 'menu-open' : ''}" style="--bp-brand:${esc(brand)}">
+    ${menuOpen ? '<div class="bp-drawer-backdrop" data-act="toggleMenu" aria-hidden="true"></div>' : ''}
     <aside class="bp-side">
       <div class="bp-side-firm"><span class="bp-logo">${logo}</span><div><b>${esc(consoleMode ? 'Broker Portal' : firm.name)}</b><span>${subtitle}</span></div></div>
       <ul class="bp-nav">${navHtml}</ul>

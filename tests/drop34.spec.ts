@@ -240,6 +240,67 @@ test('phone: bottom bar, floating quick capture and no sideways scrolling at 390
   await ctx.close();
 });
 
+test('phone drawer closes by tapping outside or Esc, and the console drawer opens too', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => errors.push(`phone: ${e.message}`));
+  await signIn(page, 'U-CK-10');
+  await page.click('.bp-menu-btn');
+  await expect(page.locator('.bp-side')).toBeInViewport();
+  // Nav items stack as a vertical list in the drawer (one per row, same left edge).
+  const boxes = await page.locator('.bp-side .bp-nav a').evaluateAll((els) => els.map((e) => e.getBoundingClientRect()).map((b) => [Math.round(b.x), Math.round(b.y)]));
+  expect(boxes.length).toBeGreaterThan(2);
+  expect(new Set(boxes.map((b) => b[0])).size, 'all items share one left edge').toBe(1);
+  for (let i = 1; i < boxes.length; i++) expect(boxes[i][1] - boxes[i - 1][1], 'rows are tight, not stretched').toBeLessThan(80);
+  await page.mouse.click(360, 420); // outside the 270 px drawer
+  await expect(page.locator('.bp-drawer-backdrop')).toHaveCount(0);
+  await expect(page.locator('.bp-side')).not.toBeInViewport();
+  await expect(page.locator('.bp-top [data-theme-toggle]')).toBeVisible();
+  await page.click('.bp-menu-btn');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.bp-side')).not.toBeInViewport();
+  // A tap inside the drawer does not close it.
+  await page.click('.bp-menu-btn');
+  await page.locator('.bp-side-firm').click();
+  await expect(page.locator('.bp-side')).toBeInViewport();
+  await page.goto('console/');
+  await page.click('text=Ananya Iyer');
+  await expect(page.locator('.bp-side')).not.toBeInViewport();
+  await page.click('.bp-menu-btn');
+  await expect(page.locator('.bp-side')).toBeInViewport();
+  await page.mouse.click(360, 420);
+  await expect(page.locator('.bp-side')).not.toBeInViewport();
+  await ctx.close();
+});
+
+test('console search finds firms by ORN, licence and invite code, but never a firm\'s leads', async ({ page }) => {
+  await page.goto('console/');
+  await page.click('text=Ananya Iyer');
+  await page.keyboard.press('Control+k');
+  await expect(modal(page).locator('#cmdk-q')).toBeVisible();
+  await expect(modal(page)).not.toContainText('arrives in drop');
+  const s = await state(page);
+  const ck = s.firms.find((f: any) => f.id === 'F-CK');
+  await page.fill('#cmdk-q', ck.orn);
+  await expect(modal(page)).toContainText(ck.name);
+  await page.fill('#cmdk-q', ck.tradeLicence);
+  await expect(modal(page)).toContainText(ck.name);
+  await page.fill('#cmdk-q', 'mgr7q2k');
+  await expect(modal(page)).toContainText('MGR7Q2K');
+  await page.fill('#cmdk-q', 'skyline');
+  await expect(modal(page)).toContainText('Join requests');
+  // Negative: a lead's name or phone is not searchable from the console.
+  const lead = s.leads.find((l: any) => l.firmId === 'F-CK');
+  await page.fill('#cmdk-q', lead.name);
+  await expect(modal(page)).toContainText('Nothing found');
+  await page.fill('#cmdk-q', 'zzzz-no-such-firm');
+  await expect(modal(page)).toContainText('Nothing found');
+  await page.fill('#cmdk-q', ck.orn);
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/#\/firm\/F-CK/);
+  await expect(modal(page).locator('.slds-modal')).toHaveCount(0);
+});
+
 test('operator sees health and churn risk from counts only', async ({ page }) => {
   await page.goto('console/');
   await page.click('text=Ananya Iyer');
